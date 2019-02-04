@@ -7,9 +7,20 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sync"
 )
 
 const numTrianglesPerWorker = 1000
+
+type readWork struct {
+	offset int
+	data   []byte
+}
+
+type parsedWork struct {
+	offset int
+	t      []Triangle
+}
 
 func readBinary(rd *bufio.Reader) (STL, error) {
 	// Header is contained in the first 80 bytes.
@@ -29,13 +40,14 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 
 	// A list of triangles completes the document.  Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
-	binToParse := make(chan []byte)
-	triParsed := make(chan []Triangle, triCount/numTrianglesPerWorker+1)
-	defer close(triParsed)
+	binToParse := make(chan readWork)
+	triParsed := make(chan parsedWork, triCount/numTrianglesPerWorker+1)
 
 	// Start up workers
+	workGroup := sync.WaitGroup{}
 	for i := 0; i < int(concurrencyLevel); i++ {
-		go parseChunksOfBinary(binToParse, triParsed)
+		workGroup.Add(1)
+		go parseChunksOfBinary(binToParse, triParsed, &workGroup)
 	}
 
 	// Read in binary and send chunks to workers
@@ -45,7 +57,13 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 	}
 	close(binToParse)
 
-	// Accumulate parsed triangles
+	// When workGroup is done, close triParsed
+	go func() {
+		workGroup.Wait()
+		close(triParsed)
+	}()
+
+	// Accumulate parsed triangles until triParsed channel is closed
 	tris := accumulateTriangles(triCount, triParsed)
 
 	return STL{
@@ -54,7 +72,7 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 		triangles:     tris,
 	}, nil
 }
-func sendBinaryToWorkers(rd *bufio.Reader, triCount uint32, work chan<- []byte) error {
+func sendBinaryToWorkers(rd *bufio.Reader, triCount uint32, work chan<- readWork) error {
 	// Get bytes for each triangle and send to worker channel
 	for i := 0; i < int(triCount); i += numTrianglesPerWorker {
 		// Get bytes and put on channel
@@ -72,34 +90,40 @@ func sendBinaryToWorkers(rd *bufio.Reader, triCount uint32, work chan<- []byte) 
 			}
 		}
 
-		work <- bin
+		work <- readWork{
+			offset: i,
+			data:   bin,
+		}
 	}
 
 	return nil
 }
-func accumulateTriangles(total uint32, in <-chan []Triangle) []Triangle {
-	tris := make([]Triangle, 0, total)
+func accumulateTriangles(triCount uint32, in <-chan parsedWork) []Triangle {
+	tris := make([]Triangle, triCount)
 	for p := range in {
-		tris = append(tris, p...)
-		if len(tris) == int(total) {
-			break
+		for i := 0; i < len(p.t); i++ {
+			tris[i+p.offset] = p.t[i]
 		}
 	}
 	return tris
 }
-func parseChunksOfBinary(in <-chan []byte, out chan<- []Triangle) {
-	for bin := range in {
-		t := make([]Triangle, 0, len(bin)/50)
-		for i := 0; i < len(bin); i += 50 {
-			t = append(t, triangleFromBinary(bin[i:i+50]))
+func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *sync.WaitGroup) {
+	defer workGroup.Done()
+	for w := range in {
+		t := make([]Triangle, 0, len(w.data)/50)
+		for i := 0; i < len(w.data); i += 50 {
+			t = append(t, triangleFromBinary(w.data[i:i+50]))
 		}
-		out <- t
+		out <- parsedWork{
+			offset: w.offset,
+			t:      t,
+		}
 	}
 }
 func triangleFromBinary(bin []byte) Triangle {
 	return Triangle{
 		Normal: unitVectorFromBinary(bin[0:12]),
-		Vertices: [3]Coordinate{
+		vertices: [3]Coordinate{
 			coordinateFromBinary(bin[12:24]),
 			coordinateFromBinary(bin[24:36]),
 			coordinateFromBinary(bin[36:48]),
