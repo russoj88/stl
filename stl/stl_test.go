@@ -37,6 +37,10 @@ func TestSTL_Header(t *testing.T) {
 		t.Errorf("could not write to dump file: %v", err)
 	}
 
+	// Set file readers to 0 so the contents of the file are actually read in
+	_, _ = gFile.Seek(0, 0)
+	_, _ = dFile.Seek(0, 0)
+
 	// Confirm the dumped file matches golden file
 	if eq, err := fileAreEqual(gFile, dFile); err != nil {
 		t.Errorf("error comparing: %v", err)
@@ -44,7 +48,6 @@ func TestSTL_Header(t *testing.T) {
 		t.Errorf("Files are not equal!")
 	}
 }
-
 func fileAreEqual(f1 *os.File, f2 *os.File) (bool, error) {
 	h1, err := fileHash(f1)
 	if err != nil {
@@ -57,7 +60,6 @@ func fileAreEqual(f1 *os.File, f2 *os.File) (bool, error) {
 
 	return h1 == h2, nil
 }
-
 func fileHash(file *os.File) (string, error) {
 	h := sha256.New()
 	if _, err := io.Copy(h, file); err != nil {
