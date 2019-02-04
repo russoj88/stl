@@ -122,13 +122,13 @@ func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *s
 }
 func triangleFromBinary(bin []byte) Triangle {
 	return Triangle{
-		Normal: unitVectorFromBinary(bin[0:12]),
+		normal: unitVectorFromBinary(bin[0:12]),
 		vertices: [3]Coordinate{
 			coordinateFromBinary(bin[12:24]),
 			coordinateFromBinary(bin[24:36]),
 			coordinateFromBinary(bin[36:48]),
 		},
-		AttrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
+		attrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
 	}
 }
 func coordinateFromBinary(bin []byte) Coordinate {

@@ -36,10 +36,10 @@ func (s *STL) WriteBinary(w io.Writer) error {
 func (t *Triangle) writeBinary(brw *bufio.Writer) error {
 	// Collect all float32s that need to be written in order
 	float32s := [12]float32{
-		t.Normal.Ni, t.Normal.Nj, t.Normal.Nk,
-		t.Vertices[0].X, t.Vertices[0].Y, t.Vertices[0].Z,
-		t.Vertices[1].X, t.Vertices[1].Y, t.Vertices[1].Z,
-		t.Vertices[2].X, t.Vertices[2].Y, t.Vertices[2].Z,
+		t.normal.Ni, t.normal.Nj, t.normal.Nk,
+		t.vertices[0].X, t.vertices[0].Y, t.vertices[0].Z,
+		t.vertices[1].X, t.vertices[1].Y, t.vertices[1].Z,
+		t.vertices[2].X, t.vertices[2].Y, t.vertices[2].Z,
 	}
 
 	// Convert them to binary and write
@@ -54,7 +54,7 @@ func (t *Triangle) writeBinary(brw *bufio.Writer) error {
 
 	// Write out the attribute byte count
 	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, t.AttrByteCnt)
+	binary.LittleEndian.PutUint16(b, t.attrByteCnt)
 	_, err := brw.Write(b)
 
 	return err
