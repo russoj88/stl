@@ -11,14 +11,14 @@ type UnitVector struct {
 	Nk float32
 }
 type Triangle struct {
-	normal      UnitVector
-	vertices    [3]Coordinate
+	normal      *UnitVector
+	vertices    [3]*Coordinate
 	attrByteCnt uint16
 }
 type STL struct {
 	header        string
 	triangleCount uint32
-	triangles     []Triangle
+	triangles     []*Triangle
 }
 
 func (s *STL) Header() string {
@@ -27,13 +27,13 @@ func (s *STL) Header() string {
 func (s *STL) TriangleCount() uint32 {
 	return s.triangleCount
 }
-func (s *STL) Triangles() *[]Triangle {
-	return &s.triangles
+func (s *STL) Triangles() []*Triangle {
+	return s.triangles
 }
-func (t *Triangle) Normal() UnitVector {
+func (t *Triangle) Normal() *UnitVector {
 	return t.normal
 }
-func (t *Triangle) Vertices() [3]Coordinate {
+func (t *Triangle) Vertices() [3]*Coordinate {
 	return t.vertices
 }
 func (t *Triangle) AttrByteCnt() uint16 {

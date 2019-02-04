@@ -98,11 +98,11 @@ func sendBinaryToWorkers(rd *bufio.Reader, triCount uint32, work chan<- readWork
 
 	return nil
 }
-func accumulateTriangles(triCount uint32, in <-chan parsedWork) []Triangle {
-	tris := make([]Triangle, triCount)
+func accumulateTriangles(triCount uint32, in <-chan parsedWork) []*Triangle {
+	tris := make([]*Triangle, triCount)
 	for p := range in {
 		for i := 0; i < len(p.t); i++ {
-			tris[i+p.offset] = p.t[i]
+			tris[i+p.offset] = &p.t[i]
 		}
 	}
 	return tris
@@ -123,7 +123,7 @@ func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *s
 func triangleFromBinary(bin []byte) Triangle {
 	return Triangle{
 		normal: unitVectorFromBinary(bin[0:12]),
-		vertices: [3]Coordinate{
+		vertices: [3]*Coordinate{
 			coordinateFromBinary(bin[12:24]),
 			coordinateFromBinary(bin[24:36]),
 			coordinateFromBinary(bin[36:48]),
@@ -131,15 +131,15 @@ func triangleFromBinary(bin []byte) Triangle {
 		attrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
 	}
 }
-func coordinateFromBinary(bin []byte) Coordinate {
-	return Coordinate{
+func coordinateFromBinary(bin []byte) *Coordinate {
+	return &Coordinate{
 		X: math.Float32frombits(binary.LittleEndian.Uint32(bin[0:4])),
 		Y: math.Float32frombits(binary.LittleEndian.Uint32(bin[4:8])),
 		Z: math.Float32frombits(binary.LittleEndian.Uint32(bin[8:12])),
 	}
 }
-func unitVectorFromBinary(bin []byte) UnitVector {
-	return UnitVector{
+func unitVectorFromBinary(bin []byte) *UnitVector {
+	return &UnitVector{
 		Ni: math.Float32frombits(binary.LittleEndian.Uint32(bin[0:4])),
 		Nj: math.Float32frombits(binary.LittleEndian.Uint32(bin[4:8])),
 		Nk: math.Float32frombits(binary.LittleEndian.Uint32(bin[8:12])),
