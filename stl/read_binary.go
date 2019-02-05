@@ -16,29 +16,32 @@ type readWork struct {
 	offset int
 	data   []byte
 }
-
 type parsedWork struct {
 	offset int
 	t      []Triangle
 }
 
 func readBinary(rd *bufio.Reader) (STL, error) {
-	// Header is contained in the first 80 bytes.
-	hBytes := make([]byte, 80)
-	_, err := rd.Read(hBytes)
+	header, err := extractHeader(rd)
 	if err != nil {
-		return STL{}, fmt.Errorf("could not read header: %v", err)
+		return STL{}, err
 	}
 
-	// Triangle count is next 4 bytes.
-	cntBytes := make([]byte, 4)
-	_, err = rd.Read(cntBytes)
+	triCount, err := extractTriangleCount(rd)
 	if err != nil {
-		return STL{}, fmt.Errorf("could not read triangle count: %v", err)
+		return STL{}, err
 	}
-	triCount := binary.LittleEndian.Uint32(cntBytes)
 
-	// A list of triangles completes the document.  Each triangle is 50 bytes.
+	tris, err := extractTriangles(triCount, rd)
+
+	return STL{
+		header:        header,
+		triangleCount: triCount,
+		triangles:     tris,
+	}, nil
+}
+func extractTriangles(triCount uint32, rd *bufio.Reader) ([]*Triangle, error) {
+	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
 	binToParse := make(chan readWork)
 	triParsed := make(chan parsedWork, triCount/numTrianglesPerWorker+1)
@@ -51,26 +54,38 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 	}
 
 	// Read in binary and send chunks to workers
-	err = sendBinaryToWorkers(rd, triCount, binToParse)
+	err := sendBinaryToWorkers(rd, triCount, binToParse)
 	if err != nil {
-		return STL{}, err
+		return nil, err
 	}
 	close(binToParse)
 
-	// When workGroup is done, close triParsed
+	// When workers are done, close triParsed
 	go func() {
 		workGroup.Wait()
 		close(triParsed)
 	}()
 
 	// Accumulate parsed triangles until triParsed channel is closed
-	tris := accumulateTriangles(triCount, triParsed)
+	return accumulateTriangles(triCount, triParsed), nil
+}
+func extractTriangleCount(rd *bufio.Reader) (uint32, error) {
+	cntBytes := make([]byte, 4)
+	_, err := rd.Read(cntBytes)
+	if err != nil {
+		return 0, fmt.Errorf("could not read triangle count: %v", err)
+	}
 
-	return STL{
-		header:        string(hBytes),
-		triangleCount: triCount,
-		triangles:     tris,
-	}, nil
+	return binary.LittleEndian.Uint32(cntBytes), nil
+}
+func extractHeader(rd *bufio.Reader) (string, error) {
+	hBytes := make([]byte, 80)
+	_, err := rd.Read(hBytes)
+	if err != nil {
+		return "", fmt.Errorf("could not read header: %v", err)
+	}
+
+	return string(hBytes), nil
 }
 func sendBinaryToWorkers(rd *bufio.Reader, triCount uint32, work chan<- readWork) error {
 	// Get bytes for each triangle and send to worker channel
