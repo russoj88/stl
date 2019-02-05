@@ -9,23 +9,23 @@ import (
 )
 
 func (s *STL) WriteBinary(w io.Writer) error {
-	brw := bufio.NewWriter(w)
-	defer brw.Flush()
+	bw := bufio.NewWriter(w)
+	defer bw.Flush()
 
-	_, err := brw.WriteString(s.header)
+	_, err := bw.WriteString(s.header)
 	if err != nil {
 		return fmt.Errorf("did not write header: %v", err)
 	}
 
 	tcBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(tcBytes, s.triangleCount)
-	_, err = brw.Write(tcBytes)
+	_, err = bw.Write(tcBytes)
 	if err != nil {
 		return fmt.Errorf("did not write triangle count: %v", err)
 	}
 
 	for _, t := range s.triangles {
-		err := t.writeBinary(brw)
+		err := t.writeBinary(bw)
 		if err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
@@ -33,7 +33,7 @@ func (s *STL) WriteBinary(w io.Writer) error {
 
 	return nil
 }
-func (t *Triangle) writeBinary(brw *bufio.Writer) error {
+func (t *Triangle) writeBinary(bw *bufio.Writer) error {
 	// Collect all float32s that need to be written in order
 	float32s := [12]float32{
 		t.normal.Ni, t.normal.Nj, t.normal.Nk,
@@ -46,7 +46,7 @@ func (t *Triangle) writeBinary(brw *bufio.Writer) error {
 	for _, f := range float32s {
 		b := make([]byte, 4)
 		binary.LittleEndian.PutUint32(b, math.Float32bits(f))
-		_, err := brw.Write(b)
+		_, err := bw.Write(b)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (t *Triangle) writeBinary(brw *bufio.Writer) error {
 	// Write out the attribute byte count
 	b := make([]byte, 2)
 	binary.LittleEndian.PutUint16(b, t.attrByteCnt)
-	_, err := brw.Write(b)
+	_, err := bw.Write(b)
 
 	return err
 }
