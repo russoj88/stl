@@ -18,7 +18,7 @@ func Read(r io.Reader) (STL, error) {
 
 	// If indicator is "solid" then it is an ASCII file.  Otherwise binary.
 	if string(indicator) == "solid" {
-		return readASCII(br)
+		return readAscii(br)
 	}
 	return readBinary(br)
 }

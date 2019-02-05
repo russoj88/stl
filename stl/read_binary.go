@@ -22,17 +22,17 @@ type parsedWork struct {
 }
 
 func readBinary(rd *bufio.Reader) (STL, error) {
-	header, err := extractHeader(rd)
+	header, err := extractBinaryHeader(rd)
 	if err != nil {
 		return STL{}, err
 	}
 
-	triCount, err := extractTriangleCount(rd)
+	triCount, err := extractBinaryTriangleCount(rd)
 	if err != nil {
 		return STL{}, err
 	}
 
-	tris, err := extractTriangles(triCount, rd)
+	tris, err := extractBinaryTriangles(triCount, rd)
 
 	return STL{
 		header:        header,
@@ -40,7 +40,7 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 		triangles:     tris,
 	}, nil
 }
-func extractTriangles(triCount uint32, rd *bufio.Reader) ([]*Triangle, error) {
+func extractBinaryTriangles(triCount uint32, rd *bufio.Reader) ([]*Triangle, error) {
 	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
 	binToParse := make(chan readWork)
@@ -69,7 +69,7 @@ func extractTriangles(triCount uint32, rd *bufio.Reader) ([]*Triangle, error) {
 	// Accumulate parsed triangles until triParsed channel is closed
 	return accumulateTriangles(triCount, triParsed), nil
 }
-func extractTriangleCount(rd *bufio.Reader) (uint32, error) {
+func extractBinaryTriangleCount(rd *bufio.Reader) (uint32, error) {
 	cntBytes := make([]byte, 4)
 	_, err := rd.Read(cntBytes)
 	if err != nil {
@@ -78,7 +78,7 @@ func extractTriangleCount(rd *bufio.Reader) (uint32, error) {
 
 	return binary.LittleEndian.Uint32(cntBytes), nil
 }
-func extractHeader(rd *bufio.Reader) (string, error) {
+func extractBinaryHeader(rd *bufio.Reader) (string, error) {
 	hBytes := make([]byte, 80)
 	_, err := rd.Read(hBytes)
 	if err != nil {
