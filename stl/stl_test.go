@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestSTL_Header(t *testing.T) {
+func TestSTL_Binary(t *testing.T) {
 	goldenFile := "testdata/Utah_teapot.stl"
 	dumpFile := "testdata/dump.stl"
 
@@ -33,6 +33,46 @@ func TestSTL_Header(t *testing.T) {
 		t.Errorf("could not open dump file: %v", err)
 	}
 	err = readSTL.WriteBinary(dFile)
+	if err != nil {
+		t.Errorf("could not write to dump file: %v", err)
+	}
+
+	// Set file readers to 0 so the contents of the file are actually read in
+	_, _ = gFile.Seek(0, 0)
+	_, _ = dFile.Seek(0, 0)
+
+	// Confirm the dumped file matches golden file
+	if eq, err := fileAreEqual(gFile, dFile); err != nil {
+		t.Errorf("error comparing: %v", err)
+	} else if !eq {
+		t.Errorf("Files are not equal!")
+	}
+}
+func TestSTL_ASCII(t *testing.T) {
+	goldenFile := "testdata/Sphericon.stl"
+	dumpFile := "testdata/dump.stl"
+
+	// Open file
+	gFile, err := os.Open(goldenFile)
+	defer gFile.Close()
+	if err != nil {
+		t.Errorf("could not open file: %v", err)
+	}
+
+	// Read into STL type
+	readSTL, err := Read(gFile)
+	if err != nil {
+		t.Errorf("could not read stl: %v", err)
+	}
+
+	// Write back to dump file
+	dFile, err := os.OpenFile(dumpFile, os.O_CREATE|os.O_RDWR, 0700)
+	defer os.Remove(dumpFile)
+	defer dFile.Close()
+	if err != nil {
+		t.Errorf("could not open dump file: %v", err)
+	}
+	err = readSTL.WriteASCII(dFile)
 	if err != nil {
 		t.Errorf("could not write to dump file: %v", err)
 	}
