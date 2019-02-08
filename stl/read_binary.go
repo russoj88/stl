@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strings"
 	"sync"
 )
 
@@ -26,6 +27,7 @@ func readBinary(rd *bufio.Reader) (STL, error) {
 	if err != nil {
 		return STL{}, err
 	}
+	header = strings.TrimSpace(header)
 
 	triCount, err := extractBinaryTriangleCount(rd)
 	if err != nil {
