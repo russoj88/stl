@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/golang/sync/errgroup"
 	"io"
 	"math"
+	"os"
 	"strings"
 	"sync"
 )
@@ -27,7 +29,6 @@ func readBinary(br *bufio.Reader) (STL, error) {
 	if err != nil {
 		return STL{}, err
 	}
-	header = strings.TrimSpace(header)
 
 	triCount, err := extractBinaryTriangleCount(br)
 	if err != nil {
@@ -87,7 +88,7 @@ func extractBinaryHeader(br *bufio.Reader) (string, error) {
 		return "", fmt.Errorf("could not read header: %v", err)
 	}
 
-	return string(hBytes), nil
+	return strings.TrimSpace(string(hBytes)), nil
 }
 func sendBinaryToWorkers(br *bufio.Reader, triCount uint32, work chan<- readWork) error {
 	// Get bytes for each triangle and send to worker channel
@@ -136,6 +137,75 @@ func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *s
 			t:      t,
 		}
 	}
+}
+func readBinaryFile(f *os.File, br *bufio.Reader) (STL, error) {
+	header, err := extractBinaryHeader(br)
+	if err != nil {
+		return STL{}, err
+	}
+
+	triCount, err := extractBinaryTriangleCount(br)
+	if err != nil {
+		return STL{}, err
+	}
+
+	tris, err := extractBinaryTrianglesFile(f, triCount)
+
+	return STL{
+		header:        header,
+		triangleCount: triCount,
+		triangles:     tris,
+	}, nil
+}
+func extractBinaryTrianglesFile(f *os.File, triCount uint32) ([]*Triangle, error) {
+	sectionSizeForReader := int(triCount / concurrencyLevel)
+	extra := int(triCount % concurrencyLevel)
+	var currentByteOffset int64 = 84
+	out := make([]*Triangle, triCount)
+
+	// Start workers based on concurrencyLevel
+	eg := errgroup.Group{}
+	for r := 0; r < int(concurrencyLevel); r++ {
+		// Get section size for this worker
+		amt := int64(sectionSizeForReader)
+		if r < extra {
+			amt += 1
+		}
+
+		// Start worker
+		currentTriIndex := int(currentByteOffset-84) / 50
+		currentWorkerByteOffset := int64(currentByteOffset)
+		currentByteOffset += amt * 50
+		eg.Go(func() error {
+			// Create a buffered reader for a section of the file
+			ff, err := os.Open(f.Name())
+			if err != nil {
+				return err
+			}
+			defer ff.Close()
+			s := io.NewSectionReader(ff, currentWorkerByteOffset, amt*50)
+			//br := bufio.NewReader(s)
+
+			for i := 0; i < int(amt); i++ {
+				bin := make([]byte, 50)
+				n, err := io.ReadFull(s, bin)
+				if err != nil || n < 50 {
+					return fmt.Errorf("could not parse triangles, read %d bytes: %v", n, err)
+				}
+
+				t := triangleFromBinary(bin)
+				out[currentTriIndex+i] = &t
+			}
+
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("unable to parse triangles: %v", err)
+	}
+
+	return out, nil
 }
 func triangleFromBinary(bin []byte) Triangle {
 	return Triangle{
