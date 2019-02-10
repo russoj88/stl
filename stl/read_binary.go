@@ -178,17 +178,12 @@ func extractBinaryTrianglesFile(f *os.File, triCount uint32) ([]*Triangle, error
 		currentByteOffset += amt * 50
 		eg.Go(func() error {
 			// Create a buffered reader for a section of the file
-			ff, err := os.Open(f.Name())
-			if err != nil {
-				return err
-			}
-			defer ff.Close()
-			s := io.NewSectionReader(ff, currentWorkerByteOffset, amt*50)
-			//br := bufio.NewReader(s)
+			s := io.NewSectionReader(f, currentWorkerByteOffset, amt*50)
+			br := bufio.NewReader(s)
 
 			for i := 0; i < int(amt); i++ {
 				bin := make([]byte, 50)
-				n, err := io.ReadFull(s, bin)
+				n, err := io.ReadFull(br, bin)
 				if err != nil || n < 50 {
 					return fmt.Errorf("could not parse triangles, read %d bytes: %v", n, err)
 				}
