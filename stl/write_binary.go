@@ -2,6 +2,7 @@ package stl
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ func (s *STL) WriteBinary(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()
 
-	_, err := bw.WriteString(s.header)
+	_, err := bw.Write(padHeader(s.header))
 	if err != nil {
 		return fmt.Errorf("did not write header: %v", err)
 	}
@@ -25,7 +26,7 @@ func (s *STL) WriteBinary(w io.Writer) error {
 	}
 
 	for _, t := range s.triangles {
-		err := t.writeBinary(bw)
+		err := writeTriangleBinary(bw, t)
 		if err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
@@ -33,7 +34,10 @@ func (s *STL) WriteBinary(w io.Writer) error {
 
 	return nil
 }
-func (t *Triangle) writeBinary(bw *bufio.Writer) error {
+func padHeader(s string) []byte {
+	return append([]byte(s), bytes.Repeat([]byte{0}, 80-len(s))...)
+}
+func writeTriangleBinary(bw *bufio.Writer, t *Triangle) error {
 	// Collect all float32s that need to be written in order
 	float32s := [12]float32{
 		t.normal.Ni, t.normal.Nj, t.normal.Nk,
