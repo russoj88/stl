@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-func readAscii(rd *bufio.Reader) (STL, error) {
-	header, err := extractAsciiHeader(rd)
+func readAscii(br *bufio.Reader) (STL, error) {
+	header, err := extractAsciiHeader(br)
 	if err != nil {
 		return STL{}, err
 	}
 
-	tris, err := extractAsciiTriangle(rd)
+	tris, err := extractAsciiTriangle(br)
 	if err != nil {
 		return STL{}, err
 	}
@@ -24,8 +24,8 @@ func readAscii(rd *bufio.Reader) (STL, error) {
 	}, nil
 }
 
-func extractAsciiTriangle(rd *bufio.Reader) (ts []*Triangle, err error) {
-	scanner := bufio.NewScanner(rd)
+func extractAsciiTriangle(br *bufio.Reader) (ts []*Triangle, err error) {
+	scanner := bufio.NewScanner(br)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), "normal") { // start of triangle
 			t, err := extractTriangles(scanner)
@@ -117,8 +117,8 @@ func extractUnitVec(s string) (*UnitVector, error) {
 	}, err
 }
 
-func extractAsciiHeader(rd *bufio.Reader) (string, error) {
-	s, _, err := rd.ReadLine()
+func extractAsciiHeader(br *bufio.Reader) (string, error) {
+	s, _, err := br.ReadLine()
 	if err != nil {
 		return "", err
 	}
