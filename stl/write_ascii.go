@@ -16,7 +16,7 @@ func (s *STL) WriteASCII(w io.Writer) error {
 	}
 
 	for _, t := range s.triangles {
-		err := writeTriangleAscii(bw, t)
+		err := writeTriangleASCII(bw, t)
 		if err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
@@ -30,7 +30,7 @@ func (s *STL) WriteASCII(w io.Writer) error {
 	return nil
 }
 
-func writeTriangleAscii(bw *bufio.Writer, t *Triangle) (err error) {
+func writeTriangleASCII(bw *bufio.Writer, t *Triangle) (err error) {
 	_, err = bw.WriteString(fmt.Sprintf(" facet normal %e %e %e\n", t.normal.Ni, t.normal.Nj, t.normal.Nk))
 	_, err = bw.WriteString("  outer loop\n")
 	for _, v := range t.vertices {
