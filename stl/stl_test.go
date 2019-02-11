@@ -89,7 +89,6 @@ func TestSTL_ASCII(t *testing.T) {
 	}
 }
 func TestSTL_ReadFile(t *testing.T) {
-	SetConcurrencyLevel(1)
 	goldenFile := "testdata/Utah_teapot.stl"
 	dumpFile := "testdata/dump2.stl"
 
