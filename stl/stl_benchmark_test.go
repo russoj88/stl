@@ -16,13 +16,12 @@ func BenchmarkRead(b *testing.B) {
 		b.Run(fmt.Sprintf("cl=%02d", testLevel), func(b *testing.B) {
 			SetConcurrencyLevel(testLevel)
 			for i := 0; i < b.N; i++ {
-				runForFile(testFile, b)
+				runRead(testFile, b)
 			}
 		})
 	}
 }
-
-func runForFile(testFile string, b *testing.B) {
+func runRead(testFile string, b *testing.B) {
 	// Open file
 	gFile, err := os.Open(testFile)
 	if err != nil {
