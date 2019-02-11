@@ -42,8 +42,10 @@ func readBinary(br *bufio.Reader) (STL, error) {
 func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, error) {
 	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
-	binToParse := make(chan readWork)
-	triParsed := make(chan parsedWork, int(triCount)/1000+1)
+	triParsed := make(chan parsedWork, concurrencyLevel)
+
+	// Read in binary and send chunks to workers
+	binToParse, errChan := sendBinaryToWorkers(br, triCount)
 
 	// Start up workers
 	workGroup := sync.WaitGroup{}
@@ -52,13 +54,6 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, err
 		go parseChunksOfBinary(binToParse, triParsed, &workGroup)
 	}
 
-	// Read in binary and send chunks to workers
-	err := sendBinaryToWorkers(br, triCount, binToParse)
-	if err != nil {
-		return nil, err
-	}
-	close(binToParse)
-
 	// When workers are done, close triParsed
 	go func() {
 		workGroup.Wait()
@@ -66,7 +61,7 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, err
 	}()
 
 	// Accumulate parsed triangles until triParsed channel is closed
-	return accumulateTriangles(triCount, triParsed), nil
+	return accumulateTriangles(triCount, triParsed, errChan)
 }
 func extractBinaryTriangleCount(br *bufio.Reader) (uint32, error) {
 	cntBytes := make([]byte, 4)
@@ -86,42 +81,59 @@ func extractBinaryHeader(br *bufio.Reader) (string, error) {
 
 	return strings.TrimSpace(string(hBytes)), nil
 }
-func sendBinaryToWorkers(br *bufio.Reader, triCount uint32, work chan<- readWork) error {
+func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan readWork, errChan chan error) {
+	errChan = make(chan error, 1)
+	work = make(chan readWork)
 	const numTrianglesPerWorkUnit = 1000
 
-	// Get bytes for each triangle and send to worker channel
-	for i := 0; i < int(triCount); i += numTrianglesPerWorkUnit {
-		// Get bytes and put on channel
-		bin := make([]byte, 50*numTrianglesPerWorkUnit)
-		n, err := io.ReadFull(br, bin)
-		if err == io.ErrUnexpectedEOF {
-			// This condition is for the last chunk which may not be complete
-			bin = bin[:n]
-		} else {
-			if n < 50*numTrianglesPerWorkUnit {
-				return errors.New("did not read entire contents")
+	go func() {
+		// Close channel when done
+		defer close(work)
+
+		// Get bytes for each triangle and send to worker channel
+		for i := 0; i < int(triCount); i += numTrianglesPerWorkUnit {
+			// Get bytes and put on channel
+			bin := make([]byte, 50*numTrianglesPerWorkUnit)
+			n, err := io.ReadFull(br, bin)
+			if err == io.ErrUnexpectedEOF {
+				// This condition is for the last chunk which may not be complete
+				bin = bin[:n]
+			} else {
+				if n < 50*numTrianglesPerWorkUnit {
+					errChan <- errors.New("did not read entire contents")
+					return
+				}
+				if err != nil {
+					errChan <- fmt.Errorf("could not parse triangles: %v", err)
+					return
+				}
 			}
-			if err != nil {
-				return fmt.Errorf("could not parse triangles: %v", err)
+
+			work <- readWork{
+				offset: i,
+				data:   bin,
 			}
 		}
+	}()
 
-		work <- readWork{
-			offset: i,
-			data:   bin,
-		}
-	}
-
-	return nil
+	return work, errChan
 }
-func accumulateTriangles(triCount uint32, in <-chan parsedWork) []*Triangle {
+func accumulateTriangles(triCount uint32, in <-chan parsedWork, errChan chan error) ([]*Triangle, error) {
+	defer close(errChan)
 	tris := make([]*Triangle, triCount)
-	for p := range in {
-		for i := 0; i < len(p.t); i++ {
-			tris[i+p.offset] = &p.t[i]
+	for {
+		select {
+		case p, more := <-in:
+			if !more {
+				return tris, nil
+			}
+			for i := 0; i < len(p.t); i++ {
+				tris[i+p.offset] = &p.t[i]
+			}
+		case err := <-errChan:
+			return nil, err
 		}
 	}
-	return tris
 }
 func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *sync.WaitGroup) {
 	defer workGroup.Done()
