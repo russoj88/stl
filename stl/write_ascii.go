@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 )
 
 func (s *STL) WriteASCII(w io.Writer) error {
@@ -31,13 +32,22 @@ func (s *STL) WriteASCII(w io.Writer) error {
 }
 
 func writeTriangleASCII(bw *bufio.Writer, t *Triangle) (err error) {
-	_, err = bw.WriteString(fmt.Sprintf(" facet normal %e %e %e\n", t.normal.Ni, t.normal.Nj, t.normal.Nk))
+	_, err = bw.WriteString(fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.normal.Ni), shortFloat(t.normal.Nj), shortFloat(t.normal.Nk)))
 	_, err = bw.WriteString("  outer loop\n")
 	for _, v := range t.vertices {
-		_, err = bw.WriteString(fmt.Sprintf("   vertex %e %e %e\n", v.X, v.Y, v.Z))
+		_, err = bw.WriteString(fmt.Sprintf("   vertex %s %s %s\n", shortFloat(v.X), shortFloat(v.Y), shortFloat(v.Z)))
 	}
 	_, err = bw.WriteString("  endloop\n")
 	_, err = bw.WriteString(" endfacet\n")
 
 	return err
+}
+func shortFloat(f float32) string {
+	// If number is an integer, return such
+	if float64(f) == math.Floor(float64(f)) {
+		return fmt.Sprintf("%d", int64(f))
+	}
+
+	// Return the shortest scientific representation of this number
+	return fmt.Sprintf("%g", f)
 }
