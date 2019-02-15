@@ -11,15 +11,6 @@ import (
 	"sync"
 )
 
-type readWork struct {
-	offset int
-	data   []byte
-}
-type parsedWork struct {
-	offset int
-	t      []Triangle
-}
-
 func readBinary(br *bufio.Reader) (STL, error) {
 	header, err := extractBinaryHeader(br)
 	if err != nil {
@@ -42,7 +33,7 @@ func readBinary(br *bufio.Reader) (STL, error) {
 func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, error) {
 	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
-	triParsed := make(chan parsedWork, concurrencyLevel)
+	triParsed := make(chan *[]*Triangle, concurrencyLevel)
 
 	// Read in binary and send chunks to workers
 	binToParse, errChan := sendBinaryToWorkers(br, triCount)
@@ -81,9 +72,9 @@ func extractBinaryHeader(br *bufio.Reader) (string, error) {
 
 	return strings.TrimSpace(string(hBytes)), nil
 }
-func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan readWork, errChan chan error) {
+func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan *[]byte, errChan chan error) {
 	errChan = make(chan error, 1)
-	work = make(chan readWork)
+	work = make(chan *[]byte, concurrencyLevel)
 	const numTrianglesPerWorkUnit = 1000
 
 	go func() {
@@ -109,47 +100,39 @@ func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan readWork,
 				}
 			}
 
-			work <- readWork{
-				offset: i,
-				data:   bin,
-			}
+			work <- &bin
 		}
 	}()
 
 	return work, errChan
 }
-func accumulateTriangles(triCount uint32, in <-chan parsedWork, errChan chan error) ([]*Triangle, error) {
+func accumulateTriangles(triCount uint32, in <-chan *[]*Triangle, errChan chan error) ([]*Triangle, error) {
 	defer close(errChan)
-	tris := make([]*Triangle, triCount)
+	tris := make([]*Triangle, 0, triCount)
 	for {
 		select {
 		case p, more := <-in:
 			if !more {
 				return tris, nil
 			}
-			for i := 0; i < len(p.t); i++ {
-				tris[i+p.offset] = &p.t[i]
-			}
+			tris = append(tris, *p...)
 		case err := <-errChan:
 			return nil, err
 		}
 	}
 }
-func parseChunksOfBinary(in <-chan readWork, out chan<- parsedWork, workGroup *sync.WaitGroup) {
+func parseChunksOfBinary(in <-chan *[]byte, out chan<- *[]*Triangle, workGroup *sync.WaitGroup) {
 	defer workGroup.Done()
 	for w := range in {
-		t := make([]Triangle, 0, len(w.data)/50)
-		for i := 0; i < len(w.data); i += 50 {
-			t = append(t, triangleFromBinary(w.data[i:i+50]))
+		t := make([]*Triangle, 0, len(*w)/50)
+		for i := 0; i < len(*w); i += 50 {
+			t = append(t, triangleFromBinary((*w)[i:i+50]))
 		}
-		out <- parsedWork{
-			offset: w.offset,
-			t:      t,
-		}
+		out <- &t
 	}
 }
-func triangleFromBinary(bin []byte) Triangle {
-	return Triangle{
+func triangleFromBinary(bin []byte) *Triangle {
+	return &Triangle{
 		normal: unitVectorFromBinary(bin[0:12]),
 		vertices: [3]*Coordinate{
 			coordinateFromBinary(bin[12:24]),
