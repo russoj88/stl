@@ -30,11 +30,9 @@ func TestSTL_Binary(t *testing.T) {
 	}
 
 	// Order triangles to make hash comparison between files
-	tr := readSTL.triangles
-	sort.Slice(tr, func(i, j int) bool {
-		return strings.Compare(tr[i].hash(), tr[j].hash()) > 0
+	sort.Slice(readSTL.triangles, func(i, j int) bool {
+		return strings.Compare(readSTL.triangles[i].hash(), readSTL.triangles[j].hash()) > 0
 	})
-	readSTL.triangles = tr
 
 	// Write back to dump file
 	dFile, err := os.OpenFile(dumpFile, os.O_CREATE|os.O_RDWR, 0700)
@@ -77,11 +75,9 @@ func TestSTL_ASCII(t *testing.T) {
 	}
 
 	// Order triangles to make hash comparison between files
-	tr := readSTL.triangles
-	sort.Slice(tr, func(i, j int) bool {
-		return strings.Compare(tr[i].hash(), tr[j].hash()) > 0
+	sort.Slice(readSTL.triangles, func(i, j int) bool {
+		return strings.Compare(readSTL.triangles[i].hash(), readSTL.triangles[j].hash()) > 0
 	})
-	readSTL.triangles = tr
 
 	// Write back to dump file
 	dFile, err := os.OpenFile(dumpFile, os.O_CREATE|os.O_RDWR, 0700)
