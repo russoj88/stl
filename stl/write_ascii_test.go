@@ -45,3 +45,35 @@ func Test_shortFloat(t *testing.T) {
 		})
 	}
 }
+func Test_triangleASCII(t *testing.T) {
+	tri := Triangle{
+		normal: &UnitVector{
+			Ni: 1,
+			Nj: 2,
+			Nk: 3,
+		},
+		vertices: [3]*Coordinate{
+			{
+				X: 10000000,
+				Y: 7,
+				Z: 234.67,
+			},
+			{
+				X: 1234.34,
+				Y: 8.231,
+				Z: 1.345,
+			},
+			{
+				X: 8,
+				Y: 1123,
+				Z: 5,
+			},
+		},
+		attrByteCnt: 0,
+	}
+	expected := " facet normal 1 2 3\n  outer loop\n   vertex 1e+07 7 234.67\n   vertex 1234.34 8.231 1.345\n   vertex 8 1123 5\n  endloop\n endfacet\n"
+	got := triangleASCII(&tri)
+	if got != expected {
+		t.Errorf("Expecting \n%s, \ngot \n%s", expected, got)
+	}
+}
