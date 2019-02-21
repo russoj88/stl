@@ -40,11 +40,16 @@ func triangleASCII(t *Triangle) string {
 		" endfacet\n"
 }
 func shortFloat(f float32) string {
-	// If f is an integer, return an integer
+	// Scientific notation
+	sn := fmt.Sprintf("%g", f)
+
+	// If f is an integer, and its shorter than scientific notation form, return an integer
 	if float64(f) == math.Floor(float64(f)) {
-		return fmt.Sprintf("%d", int64(f))
+		in := fmt.Sprintf("%d", int64(f))
+		if len(sn) > len(in) {
+			return in
+		}
 	}
 
-	// Return the shortest scientific representation of f
-	return fmt.Sprintf("%g", f)
+	return sn
 }
