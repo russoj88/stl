@@ -1,8 +1,6 @@
 package stl
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -13,6 +11,7 @@ import (
 )
 
 func TestSTL_Binary(t *testing.T) {
+	t.Parallel()
 	goldenFile := "testdata/Utah_teapot.stl"
 	dumpFile := "testdata/dump.stl"
 
@@ -58,8 +57,9 @@ func TestSTL_Binary(t *testing.T) {
 	}
 }
 func TestSTL_ASCII(t *testing.T) {
+	t.Parallel()
 	goldenFile := "testdata/Sphericon.stl"
-	dumpFile := "testdata/dump.stl"
+	dumpFile := "testdata/dump2.stl"
 
 	// Open file
 	gFile, err := os.Open(goldenFile)
@@ -123,11 +123,6 @@ func fileHash(file *os.File) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 func (t *Triangle) hash() string {
-	b := bytes.Buffer{}
-	buf := bufio.NewWriter(&b)
-	_ = writeTriangleBinary(buf, t)
-
-	buf.Flush()
-	h := sha256.Sum256(b.Bytes())
+	h := sha256.Sum256(triangleBinary(t))
 	return string(h[:])
 }
