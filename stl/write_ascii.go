@@ -17,8 +17,7 @@ func (s *STL) WriteASCII(w io.Writer) error {
 	}
 
 	for _, t := range s.triangles {
-		err := writeTriangleASCII(bw, t)
-		if err != nil {
+		if _, err := bw.WriteString(triangleASCII(t)); err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
 	}
@@ -31,23 +30,21 @@ func (s *STL) WriteASCII(w io.Writer) error {
 	return nil
 }
 
-func writeTriangleASCII(bw *bufio.Writer, t *Triangle) (err error) {
-	_, err = bw.WriteString(fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.normal.Ni), shortFloat(t.normal.Nj), shortFloat(t.normal.Nk)))
-	_, err = bw.WriteString("  outer loop\n")
-	for _, v := range t.vertices {
-		_, err = bw.WriteString(fmt.Sprintf("   vertex %s %s %s\n", shortFloat(v.X), shortFloat(v.Y), shortFloat(v.Z)))
-	}
-	_, err = bw.WriteString("  endloop\n")
-	_, err = bw.WriteString(" endfacet\n")
-
-	return err
+func triangleASCII(t *Triangle) string {
+	return fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.normal.Ni), shortFloat(t.normal.Nj), shortFloat(t.normal.Nk)) +
+		"  outer loop\n" +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[0].X), shortFloat(t.vertices[0].Y), shortFloat(t.vertices[0].Z)) +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[1].X), shortFloat(t.vertices[1].Y), shortFloat(t.vertices[1].Z)) +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[2].X), shortFloat(t.vertices[2].Y), shortFloat(t.vertices[2].Z)) +
+		"  endloop\n" +
+		" endfacet\n"
 }
 func shortFloat(f float32) string {
-	// If number is an integer, return such
+	// If f is an integer, return an integer
 	if float64(f) == math.Floor(float64(f)) {
 		return fmt.Sprintf("%d", int64(f))
 	}
 
-	// Return the shortest scientific representation of this number
+	// Return the shortest scientific representation of f
 	return fmt.Sprintf("%g", f)
 }
