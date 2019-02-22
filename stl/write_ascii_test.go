@@ -15,16 +15,24 @@ func Test_shortFloat(t *testing.T) {
 			expected: "1",
 		},
 		{
+			in:       100000,
+			expected: "100000",
+		},
+		{
+			in:       1000000,
+			expected: "1e+06",
+		},
+		{
+			in:       1234567,
+			expected: "1234567",
+		},
+		{
 			in:       1.000,
 			expected: "1",
 		},
 		{
 			in:       45.754,
 			expected: "45.754",
-		},
-		{
-			in:       100000000,
-			expected: "1e+08",
 		},
 		{
 			in:       .0000000005,
