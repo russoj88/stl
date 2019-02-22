@@ -1,7 +1,8 @@
-package stl
+package stl_test
 
 import (
 	"fmt"
+	"gitlab.com/russoj88/stl/stl"
 	"os"
 	"testing"
 )
@@ -14,7 +15,7 @@ func BenchmarkRead(b *testing.B) {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 40, 48, 56, 64,
 	} {
 		b.Run(fmt.Sprintf("cl=%02d", testLevel), func(b *testing.B) {
-			SetConcurrencyLevel(testLevel)
+			stl.SetConcurrencyLevel(testLevel)
 			for i := 0; i < b.N; i++ {
 				runRead(testFile, b)
 			}
@@ -30,7 +31,7 @@ func runRead(testFile string, b *testing.B) {
 	defer gFile.Close()
 
 	// Read into STL type
-	_, err = Read(gFile)
+	_, err = stl.Read(gFile)
 	if err != nil {
 		b.Errorf("could not read stl: %v", err)
 	}
