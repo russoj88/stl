@@ -29,13 +29,18 @@ func (s *STL) WriteBinary(w io.Writer) error {
 
 	return nil
 }
+func headerBinary(s string) []byte {
+	// Trim header down to 80 bytes
+	if len(s) > 80 {
+		s = s[:80]
+	}
+
+	return append([]byte(s), bytes.Repeat([]byte{0}, 80-len(s))...)
+}
 func triCountBinary(u uint32) []byte {
 	tcBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(tcBytes, u)
 	return tcBytes
-}
-func headerBinary(s string) []byte {
-	return append([]byte(s), bytes.Repeat([]byte{0}, 80-len(s))...)
 }
 func triangleBinary(t *Triangle) []byte {
 	bin := make([]byte, 0, 50)
