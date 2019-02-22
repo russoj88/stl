@@ -39,16 +39,14 @@ func headerBinary(s string) []byte {
 }
 func triangleBinary(t *Triangle) []byte {
 	bin := make([]byte, 0, 50)
-	// Collect all float32s in order
-	float32s := [12]float32{
+
+	// Convert float32s to binary
+	for _, f := range [12]float32{
 		t.normal.Ni, t.normal.Nj, t.normal.Nk,
 		t.vertices[0].X, t.vertices[0].Y, t.vertices[0].Z,
 		t.vertices[1].X, t.vertices[1].Y, t.vertices[1].Z,
 		t.vertices[2].X, t.vertices[2].Y, t.vertices[2].Z,
-	}
-
-	// Convert float32s to binary
-	for _, f := range float32s {
+	} {
 		b := make([]byte, 4)
 		binary.LittleEndian.PutUint32(b, math.Float32bits(f))
 		bin = append(bin, b...)
