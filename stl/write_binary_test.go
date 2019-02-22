@@ -2,6 +2,7 @@ package stl
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -27,6 +28,34 @@ func Test_headerBinary(t *testing.T) {
 		t.Run(tst.h, func(t *testing.T) {
 			t.Parallel()
 			got := headerBinary(tst.h)
+			if !bytes.Equal(got, tst.expected) {
+				t.Errorf("Expecting %x, got %x", tst.expected, got)
+			}
+		})
+	}
+}
+func Test_triCountBinary(t *testing.T) {
+	for _, tst := range []struct {
+		c        uint32
+		expected []byte
+	}{
+		{
+			c:        0,
+			expected: []byte{0x00, 0x00, 0x00, 0x00},
+		},
+		{
+			c:        500,
+			expected: []byte{0xf4, 0x01, 0x00, 0x00},
+		},
+		{
+			c:        1000222,
+			expected: []byte{0x1e, 0x43, 0x0f, 0x00},
+		},
+	} {
+		tst := tst
+		t.Run(fmt.Sprintf("%d", tst.c), func(t *testing.T) {
+			t.Parallel()
+			got := triCountBinary(tst.c)
 			if !bytes.Equal(got, tst.expected) {
 				t.Errorf("Expecting %x, got %x", tst.expected, got)
 			}
