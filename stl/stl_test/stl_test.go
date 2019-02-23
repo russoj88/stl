@@ -3,6 +3,7 @@ package stl
 import (
 	"crypto/sha256"
 	"fmt"
+	"gitlab.com/russoj88/stl/stl"
 	"io"
 	"os"
 	"sort"
@@ -23,14 +24,14 @@ func TestSTL_Binary(t *testing.T) {
 	}
 
 	// Read into STL type
-	readSTL, err := Read(gFile)
+	readSTL, err := stl.Read(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Order triangles to make hash comparison between files
-	sort.Slice(readSTL.triangles, func(i, j int) bool {
-		return strings.Compare(readSTL.triangles[i].hash(), readSTL.triangles[j].hash()) > 0
+	sort.Slice(readSTL.Triangles(), func(i, j int) bool {
+		return strings.Compare(hash(readSTL.Triangles()[i]), hash(readSTL.Triangles()[j])) > 0
 	})
 
 	// Write back to dump file
@@ -69,14 +70,14 @@ func TestSTL_ASCII(t *testing.T) {
 	}
 
 	// Read into STL type
-	readSTL, err := Read(gFile)
+	readSTL, err := stl.Read(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Order triangles to make hash comparison between files
-	sort.Slice(readSTL.triangles, func(i, j int) bool {
-		return strings.Compare(readSTL.triangles[i].hash(), readSTL.triangles[j].hash()) > 0
+	sort.Slice(readSTL.Triangles(), func(i, j int) bool {
+		return strings.Compare(hash(readSTL.Triangles()[i]), hash(readSTL.Triangles()[j])) > 0
 	})
 
 	// Write back to dump file
@@ -122,7 +123,12 @@ func fileHash(file *os.File) (string, error) {
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
-func (t *Triangle) hash() string {
-	h := sha256.Sum256(triangleBinary(t))
-	return string(h[:])
+func hash(t *stl.Triangle) string {
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprintf("%v", *t.Normal())))
+	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices()[0])))
+	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices()[1])))
+	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices()[2])))
+	h.Write([]byte(fmt.Sprintf("%v", t.AttrByteCnt())))
+	return string(h.Sum(nil))
 }
