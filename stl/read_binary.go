@@ -25,9 +25,9 @@ func readBinary(br *bufio.Reader) (STL, error) {
 	tris, err := extractBinaryTriangles(triCount, br)
 
 	return STL{
-		header:        header,
-		triangleCount: triCount,
-		triangles:     tris,
+		Header:        header,
+		TriangleCount: triCount,
+		Triangles:     tris,
 	}, nil
 }
 func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, error) {
@@ -51,7 +51,7 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, err
 		close(triParsed)
 	}()
 
-	// Accumulate parsed triangles until triParsed channel is closed
+	// Accumulate parsed Triangles until triParsed channel is closed
 	return accumulateTriangles(triCount, triParsed, errChan)
 }
 func extractBinaryTriangleCount(br *bufio.Reader) (uint32, error) {
@@ -95,7 +95,7 @@ func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan *[]byte, 
 					return
 				}
 				if err != nil {
-					errChan <- fmt.Errorf("could not parse triangles: %v", err)
+					errChan <- fmt.Errorf("could not parse Triangles: %v", err)
 					return
 				}
 			}
@@ -133,13 +133,13 @@ func parseChunksOfBinary(in <-chan *[]byte, out chan<- *[]*Triangle, workGroup *
 }
 func triangleFromBinary(bin []byte) *Triangle {
 	return &Triangle{
-		normal: unitVectorFromBinary(bin[0:12]),
-		vertices: [3]*Coordinate{
+		Normal: unitVectorFromBinary(bin[0:12]),
+		Vertices: [3]*Coordinate{
 			coordinateFromBinary(bin[12:24]),
 			coordinateFromBinary(bin[24:36]),
 			coordinateFromBinary(bin[36:48]),
 		},
-		attrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
+		AttrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
 	}
 }
 func coordinateFromBinary(bin []byte) *Coordinate {
