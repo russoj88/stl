@@ -11,18 +11,18 @@ func (s *STL) WriteASCII(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()
 
-	_, err := bw.WriteString("solid " + s.header + "\n")
+	_, err := bw.WriteString("solid " + s.Header + "\n")
 	if err != nil {
 		return fmt.Errorf("did not write header: %v", err)
 	}
 
-	for _, t := range s.triangles {
+	for _, t := range s.Triangles {
 		if _, err := bw.WriteString(triangleASCII(t)); err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
 	}
 
-	_, err = bw.WriteString("endsolid " + s.header + "\n")
+	_, err = bw.WriteString("endsolid " + s.Header + "\n")
 	if err != nil {
 		return fmt.Errorf("did not write footer: %v", err)
 	}
@@ -31,11 +31,11 @@ func (s *STL) WriteASCII(w io.Writer) error {
 }
 
 func triangleASCII(t *Triangle) string {
-	return fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.normal.Ni), shortFloat(t.normal.Nj), shortFloat(t.normal.Nk)) +
+	return fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.Normal.Ni), shortFloat(t.Normal.Nj), shortFloat(t.Normal.Nk)) +
 		"  outer loop\n" +
-		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[0].X), shortFloat(t.vertices[0].Y), shortFloat(t.vertices[0].Z)) +
-		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[1].X), shortFloat(t.vertices[1].Y), shortFloat(t.vertices[1].Z)) +
-		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.vertices[2].X), shortFloat(t.vertices[2].Y), shortFloat(t.vertices[2].Z)) +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.Vertices[0].X), shortFloat(t.Vertices[0].Y), shortFloat(t.Vertices[0].Z)) +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.Vertices[1].X), shortFloat(t.Vertices[1].Y), shortFloat(t.Vertices[1].Z)) +
+		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.Vertices[2].X), shortFloat(t.Vertices[2].Y), shortFloat(t.Vertices[2].Z)) +
 		"  endloop\n" +
 		" endfacet\n"
 }

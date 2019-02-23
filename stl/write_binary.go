@@ -13,15 +13,15 @@ func (s *STL) WriteBinary(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()
 
-	if _, err := bw.Write(headerBinary(s.header)); err != nil {
+	if _, err := bw.Write(headerBinary(s.Header)); err != nil {
 		return fmt.Errorf("did not write header: %v", err)
 	}
 
-	if _, err := bw.Write(triCountBinary(s.triangleCount)); err != nil {
+	if _, err := bw.Write(triCountBinary(s.TriangleCount)); err != nil {
 		return fmt.Errorf("did not write triangle count: %v", err)
 	}
 
-	for _, t := range s.triangles {
+	for _, t := range s.Triangles {
 		if _, err := bw.Write(triangleBinary(t)); err != nil {
 			return fmt.Errorf("did not write triangle: %v", err)
 		}
@@ -47,10 +47,10 @@ func triangleBinary(t *Triangle) []byte {
 
 	// Convert float32s to binary
 	for _, f := range [12]float32{
-		t.normal.Ni, t.normal.Nj, t.normal.Nk,
-		t.vertices[0].X, t.vertices[0].Y, t.vertices[0].Z,
-		t.vertices[1].X, t.vertices[1].Y, t.vertices[1].Z,
-		t.vertices[2].X, t.vertices[2].Y, t.vertices[2].Z,
+		t.Normal.Ni, t.Normal.Nj, t.Normal.Nk,
+		t.Vertices[0].X, t.Vertices[0].Y, t.Vertices[0].Z,
+		t.Vertices[1].X, t.Vertices[1].Y, t.Vertices[1].Z,
+		t.Vertices[2].X, t.Vertices[2].Y, t.Vertices[2].Z,
 	} {
 		b := make([]byte, 4)
 		binary.LittleEndian.PutUint32(b, math.Float32bits(f))
@@ -59,7 +59,7 @@ func triangleBinary(t *Triangle) []byte {
 
 	// Attribute byte count binary
 	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, t.attrByteCnt)
+	binary.LittleEndian.PutUint16(b, t.AttrByteCnt)
 	bin = append(bin, b...)
 
 	return bin

@@ -18,9 +18,9 @@ func readASCII(br *bufio.Reader) (STL, error) {
 	}
 
 	return STL{
-		header:        header,
-		triangleCount: uint32(len(tris)),
-		triangles:     tris,
+		Header:        header,
+		TriangleCount: uint32(len(tris)),
+		Triangles:     tris,
 	}, nil
 }
 
@@ -66,9 +66,9 @@ func extractTriangles(scanner *bufio.Scanner) (*Triangle, error) {
 	scanner.Scan()
 
 	return &Triangle{
-		normal:      norm,
-		vertices:    v,
-		attrByteCnt: 0,
+		Normal:      norm,
+		Vertices:    v,
+		AttrByteCnt: 0,
 	}, nil
 }
 
