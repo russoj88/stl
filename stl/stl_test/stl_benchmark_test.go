@@ -9,7 +9,7 @@ import (
 
 func BenchmarkRead(b *testing.B) {
 	testFile := "testdata/Utah_teapot.stl"
-	for _, testLevel := range []uint32{
+	for _, testLevel := range []int{
 		// Add different levels of concurrency here to see the best performance on a particular machine
 		// The number of cores (x2 for hyper-threading) seem to get the best performance
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 40, 48, 56, 64,
