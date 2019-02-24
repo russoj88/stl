@@ -9,6 +9,7 @@ import (
 	"math"
 )
 
+// ToBinary writes the Solid out in binary form
 func (s *Solid) ToBinary(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()

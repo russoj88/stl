@@ -7,6 +7,7 @@ import (
 	"math"
 )
 
+// ToASCII writes the Solid out in ASCII form
 func (s *Solid) ToASCII(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()
