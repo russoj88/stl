@@ -1,5 +1,11 @@
 package stl
 
+import "errors"
+
+var (
+	ErrEmptyInput = errors.New("input has no content")
+)
+
 type Coordinate struct {
 	X float32
 	Y float32
