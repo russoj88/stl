@@ -15,7 +15,7 @@ type Triangle struct {
 	Vertices    [3]*Coordinate
 	AttrByteCnt uint16
 }
-type STL struct {
+type Solid struct {
 	Header        string
 	TriangleCount uint32
 	Triangles     []*Triangle

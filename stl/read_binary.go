@@ -11,20 +11,20 @@ import (
 	"sync"
 )
 
-func readBinary(br *bufio.Reader) (STL, error) {
+func fromBinary(br *bufio.Reader) (Solid, error) {
 	header, err := extractBinaryHeader(br)
 	if err != nil {
-		return STL{}, err
+		return Solid{}, err
 	}
 
 	triCount, err := extractBinaryTriangleCount(br)
 	if err != nil {
-		return STL{}, err
+		return Solid{}, err
 	}
 
 	tris, err := extractBinaryTriangles(triCount, br)
 
-	return STL{
+	return Solid{
 		Header:        header,
 		TriangleCount: triCount,
 		Triangles:     tris,
