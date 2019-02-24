@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// From creates a Solid from the input
 func From(r io.Reader) (Solid, error) {
 	// Use a buffered reader.  Default size is 4096 (4KB).
 	br := bufio.NewReader(r)
