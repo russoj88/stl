@@ -9,7 +9,7 @@ import (
 	"math"
 )
 
-func (s *STL) WriteBinary(w io.Writer) error {
+func (s *Solid) ToBinary(w io.Writer) error {
 	bw := bufio.NewWriter(w)
 	defer bw.Flush()
 

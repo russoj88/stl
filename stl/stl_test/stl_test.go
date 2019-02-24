@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestSTL_Binary(t *testing.T) {
+func Test_Binary(t *testing.T) {
 	t.Parallel()
 	goldenFile := "testdata/Utah_teapot.stl"
 	dumpFile := "testdata/dump.stl"
@@ -23,15 +23,15 @@ func TestSTL_Binary(t *testing.T) {
 		t.Errorf("could not open file: %v", err)
 	}
 
-	// Read into STL type
-	readSTL, err := stl.Read(gFile)
+	// Read into Solid type
+	solid, err := stl.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Order triangles to make hash comparison between files
-	sort.Slice(readSTL.Triangles, func(i, j int) bool {
-		return strings.Compare(hash(readSTL.Triangles[i]), hash(readSTL.Triangles[j])) > 0
+	sort.Slice(solid.Triangles, func(i, j int) bool {
+		return strings.Compare(hash(solid.Triangles[i]), hash(solid.Triangles[j])) > 0
 	})
 
 	// Write back to dump file
@@ -41,7 +41,7 @@ func TestSTL_Binary(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open dump file: %v", err)
 	}
-	err = readSTL.WriteBinary(dFile)
+	err = solid.ToBinary(dFile)
 	if err != nil {
 		t.Errorf("could not write to dump file: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestSTL_Binary(t *testing.T) {
 		t.Errorf("Files are not equal!")
 	}
 }
-func TestSTL_ASCII(t *testing.T) {
+func Test_ASCII(t *testing.T) {
 	t.Parallel()
 	goldenFile := "testdata/Sphericon.stl"
 	dumpFile := "testdata/dump2.stl"
@@ -69,15 +69,15 @@ func TestSTL_ASCII(t *testing.T) {
 		t.Errorf("could not open file: %v", err)
 	}
 
-	// Read into STL type
-	readSTL, err := stl.Read(gFile)
+	// Read into Solid type
+	solid, err := stl.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Order triangles to make hash comparison between files
-	sort.Slice(readSTL.Triangles, func(i, j int) bool {
-		return strings.Compare(hash(readSTL.Triangles[i]), hash(readSTL.Triangles[j])) > 0
+	sort.Slice(solid.Triangles, func(i, j int) bool {
+		return strings.Compare(hash(solid.Triangles[i]), hash(solid.Triangles[j])) > 0
 	})
 
 	// Write back to dump file
@@ -87,7 +87,7 @@ func TestSTL_ASCII(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not open dump file: %v", err)
 	}
-	err = readSTL.WriteASCII(dFile)
+	err = solid.ToASCII(dFile)
 	if err != nil {
 		t.Errorf("could not write to dump file: %v", err)
 	}

@@ -30,8 +30,8 @@ func runRead(testFile string, b *testing.B) {
 	}
 	defer gFile.Close()
 
-	// Read into STL type
-	_, err = stl.Read(gFile)
+	// Read into Solid type
+	_, err = stl.From(gFile)
 	if err != nil {
 		b.Errorf("could not read stl: %v", err)
 	}

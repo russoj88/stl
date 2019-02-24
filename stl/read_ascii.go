@@ -6,18 +6,18 @@ import (
 	"strings"
 )
 
-func readASCII(br *bufio.Reader) (STL, error) {
+func fromASCII(br *bufio.Reader) (Solid, error) {
 	header, err := extractASCIIHeader(br)
 	if err != nil {
-		return STL{}, err
+		return Solid{}, err
 	}
 
 	tris, err := extractASCIITriangle(br)
 	if err != nil {
-		return STL{}, err
+		return Solid{}, err
 	}
 
-	return STL{
+	return Solid{
 		Header:        header,
 		TriangleCount: uint32(len(tris)),
 		Triangles:     tris,
