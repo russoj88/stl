@@ -8,7 +8,7 @@ This takes in an `io.Reader` and will return an `stl.STL`.  This read method wil
 
 The io is done sequentially for ASCII files, and concurrently for binary files.  This concurrent reader gives almost a 4x speedup on an E3-1231 v3 @ 3.40GHz reading off a SATA SSD.
 
-The concurrency level can be controlled with `stl.SetConcurrencyLevel(l uint32)`.  1 is the minimum.  Best performance is found using the number of CPU cores returned by `runtime.NumCPU()` and is the default.  Performance tails off after this, but not by much.  Users of this library can easily test by running the benchmark in `stl_benchmark_test.go`.
+The concurrency level can be controlled with `stl.SetConcurrencyLevel(l int)`.  1 is the minimum.  Best performance is found using the number of CPU cores returned by `runtime.NumCPU()` and is the default.  Performance tails off after this, but not by much.  Users of this library can easily test by running the benchmark in `stl_benchmark_test.go`.
 
 ##### WriteASCII
 This will write an `stl.STL` to an `io.Writer` in ASCII format.  The representations of the numbers are minimized to save some space.
