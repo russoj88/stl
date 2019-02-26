@@ -2,8 +2,10 @@ package stl
 
 import (
 	"bufio"
+	"bytes"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func fromASCII(br *bufio.Reader) (Solid, error) {
@@ -12,7 +14,7 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 		return Solid{}, err
 	}
 
-	tris, err := extractASCIITriangle(br)
+	tris, err := extractASCIITriangles(br)
 	if err != nil {
 		return Solid{}, err
 	}
@@ -24,52 +26,64 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 	}, nil
 }
 
-func extractASCIITriangle(br *bufio.Reader) (ts []*Triangle, err error) {
+func extractASCIITriangles(br *bufio.Reader) (ts []*Triangle, err error) {
 	scanner := bufio.NewScanner(br)
+	scanner.Split(splitTriangles)
+	triangles := make(chan *Triangle)
+	errs := make(chan error)
+	var wg sync.WaitGroup
 	for scanner.Scan() {
-		if strings.Contains(scanner.Text(), "normal") { // start of triangle
-			t, err := extractTriangles(scanner)
-			if err != nil {
-				return nil, err
+		wg.Add(1)
+		go extractTriangle(scanner.Text(), triangles, errs, &wg)
+	}
+	go func() {
+		wg.Wait()
+		close(triangles)
+		close(errs)
+	}()
+	for {
+		select {
+		case t, ok := <-triangles:
+			if !ok {
+				return
 			}
 			ts = append(ts, t)
+		case err, _ = <-errs:
+			if err != nil {
+				return
+			}
 		}
 	}
-	return
 }
 
-func extractTriangles(scanner *bufio.Scanner) (*Triangle, error) {
-	// Get the normal for a triangle
-	norm, err := extractUnitVec(scanner.Text())
-	if err != nil {
-		return nil, err
+func extractTriangle(s string, triangles chan *Triangle, errs chan error, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if strings.Contains(s, "endsolid") { //edge case, end of file
+		return
 	}
-
-	// Get past normal
-	scanner.Scan()
-
-	// Assumes 3 vertices
 	var v [3]*Coordinate
-	for i := 0; i < 3; i++ {
-		scanner.Scan()
-		c, err := extractCoords(scanner.Text())
-		if err != nil {
-			return nil, err
-		}
-		v[i] = c
+	var norm *UnitVector
+	sl := strings.Split(s, "  ")
+
+	// Get the normal for a triangle
+	norm, err := extractUnitVec(sl[0])
+	if err != nil {
+		errs <- err
 	}
 
-	// Pass "endloop"
-	scanner.Scan()
+	// Get coordinates
+	for i := 0; i < 3; i++ {
+		v[i], err = extractCoords(sl[i+1])
+		if err != nil {
+			errs <- err
+		}
+	}
 
-	// Pass "endfacet"
-	scanner.Scan()
-
-	return &Triangle{
+	triangles <- &Triangle{
 		Normal:      norm,
 		Vertices:    v,
 		AttrByteCnt: 0,
-	}, nil
+	}
 }
 
 func extractCoords(s string) (*Coordinate, error) {
@@ -95,7 +109,6 @@ func extractCoords(s string) (*Coordinate, error) {
 }
 
 func extractUnitVec(s string) (*UnitVector, error) {
-	//should be index 2-4 if spacing remains constant
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	i, err := strconv.ParseFloat(sl[2], 32)
 	if err != nil {
@@ -124,4 +137,53 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 	}
 
 	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
+}
+
+func splitTriangles(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var t []byte
+	var a int
+	good := true //indicates a good triangle was parsed
+
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	for n := 0; n < 7; n++ {
+		switch n {
+		case 0:
+			if i := bytes.IndexByte(data[a:], '\n'); i >= 0 {
+				t = append(t, data[0:i]...)
+				a += i + 1
+			} else {
+				good = false
+			}
+		case 2, 3, 4:
+			if i := bytes.IndexByte(data[a:], '\n'); i >= 0 {
+				t = append(t, data[a:i+a+1]...)
+				a += i + 1
+			} else {
+				good = false
+			}
+		case 6:
+			if i := bytes.IndexByte(data[a:], '\n'); i >= 0 {
+				a += i + 1
+			} else {
+				good = false
+			}
+			if good {
+				return a, t, nil
+			}
+		default:
+			if i := bytes.IndexByte(data[a:], '\n'); i >= 0 {
+				a += i + 1
+			} else {
+				good = false
+			}
+		}
+	}
+
+	if atEOF {
+		return len(data), data, nil
+	}
+	return
 }
