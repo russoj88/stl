@@ -41,12 +41,12 @@ func Test_coordinateFromBinary(t *testing.T) {
 func Test_triangleFromBinary(t *testing.T) {
 	bin := []byte{0x8a, 0xa5, 0x10, 0x3f, 0xbd, 0x5f, 0x8f, 0x3e, 0x73, 0xae, 0x46, 0x3f, 0x4d, 0xbe, 0x6b, 0x40, 0xa6, 0xe5, 0xd2, 0x3f, 0xc1, 0x40, 0xd8, 0x40, 0xb0, 0x38, 0x5d, 0x40, 0x13, 0xc0, 0x06, 0x40, 0xc1, 0x40, 0xd8, 0x40, 0xb4, 0xad, 0x5a, 0x40, 0xbd, 0x41, 0x05, 0x40, 0xb3, 0x72, 0xd9, 0x40, 0x00, 0x00}
 	expected := Triangle{
-		Normal: &UnitVector{
+		Normal: UnitVector{
 			Ni: 0.5650259,
 			Nj: 0.2800273,
 			Nk: 0.7760994,
 		},
-		Vertices: [3]*Coordinate{
+		Vertices: [3]Coordinate{
 			{
 				X: 3.68349,
 				Y: 1.6476333,
@@ -67,12 +67,12 @@ func Test_triangleFromBinary(t *testing.T) {
 	}
 
 	got := triangleFromBinary(bin)
-	if *got.Normal != *expected.Normal {
-		t.Errorf("Expecting %+v, got %+v for normal", *expected.Normal, *got.Normal)
+	if got.Normal != expected.Normal {
+		t.Errorf("Expecting %+v, got %+v for normal", expected.Normal, got.Normal)
 	}
 	for i := 0; i < 3; i++ {
-		if *got.Vertices[i] != *expected.Vertices[i] {
-			t.Errorf("Expecting %+v, got %+v for vertex %d", *got.Vertices[i], *expected.Vertices[i], i)
+		if got.Vertices[i] != expected.Vertices[i] {
+			t.Errorf("Expecting %+v, got %+v for vertex %d", got.Vertices[i], expected.Vertices[i], i)
 		}
 	}
 	if got.AttrByteCnt != expected.AttrByteCnt {

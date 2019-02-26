@@ -43,7 +43,7 @@ func triCountBinary(u uint32) []byte {
 	binary.LittleEndian.PutUint32(tcBytes, u)
 	return tcBytes
 }
-func triangleBinary(t *Triangle) []byte {
+func triangleBinary(t Triangle) []byte {
 	bin := make([]byte, 0, 50)
 
 	// Convert float32s to binary

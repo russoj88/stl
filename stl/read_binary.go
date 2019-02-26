@@ -30,7 +30,7 @@ func fromBinary(br *bufio.Reader) (Solid, error) {
 		Triangles:     tris,
 	}, nil
 }
-func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, error) {
+func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, error) {
 	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
 	triParsed := make(chan []Triangle, concurrencyLevel)
@@ -107,13 +107,11 @@ func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan []byte, e
 
 	return work, errChan
 }
-func accumulateTriangles(triCount uint32, in <-chan []Triangle, errChan chan error) ([]*Triangle, error) {
+func accumulateTriangles(triCount uint32, in <-chan []Triangle, errChan chan error) ([]Triangle, error) {
 	// Read in all triangles
-	tris := make([]*Triangle, 0, triCount)
+	tris := make([]Triangle, 0, triCount)
 	for t := range in {
-		for _, tp := range t {
-			tris = append(tris, &tp)
-		}
+		tris = append(tris, t...)
 	}
 
 	// If there is an error on errChan, return it
@@ -137,7 +135,7 @@ func parseChunksOfBinary(in <-chan []byte, out chan<- []Triangle, workGroup *syn
 func triangleFromBinary(bin []byte) Triangle {
 	return Triangle{
 		Normal: unitVectorFromBinary(bin[0:12]),
-		Vertices: [3]*Coordinate{
+		Vertices: [3]Coordinate{
 			coordinateFromBinary(bin[12:24]),
 			coordinateFromBinary(bin[24:36]),
 			coordinateFromBinary(bin[36:48]),
@@ -145,15 +143,15 @@ func triangleFromBinary(bin []byte) Triangle {
 		AttrByteCnt: uint16(bin[48])<<8 | uint16(bin[49]),
 	}
 }
-func coordinateFromBinary(bin []byte) *Coordinate {
-	return &Coordinate{
+func coordinateFromBinary(bin []byte) Coordinate {
+	return Coordinate{
 		X: math.Float32frombits(binary.LittleEndian.Uint32(bin[0:4])),
 		Y: math.Float32frombits(binary.LittleEndian.Uint32(bin[4:8])),
 		Z: math.Float32frombits(binary.LittleEndian.Uint32(bin[8:12])),
 	}
 }
-func unitVectorFromBinary(bin []byte) *UnitVector {
-	return &UnitVector{
+func unitVectorFromBinary(bin []byte) UnitVector {
+	return UnitVector{
 		Ni: math.Float32frombits(binary.LittleEndian.Uint32(bin[0:4])),
 		Nj: math.Float32frombits(binary.LittleEndian.Uint32(bin[4:8])),
 		Nk: math.Float32frombits(binary.LittleEndian.Uint32(bin[8:12])),

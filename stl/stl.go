@@ -17,12 +17,12 @@ type UnitVector struct {
 	Nk float32
 }
 type Triangle struct {
-	Normal      *UnitVector
-	Vertices    [3]*Coordinate
+	Normal      UnitVector
+	Vertices    [3]Coordinate
 	AttrByteCnt uint16
 }
 type Solid struct {
 	Header        string
 	TriangleCount uint32
-	Triangles     []*Triangle
+	Triangles     []Triangle
 }

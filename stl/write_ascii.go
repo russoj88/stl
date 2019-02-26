@@ -30,7 +30,7 @@ func (s *Solid) ToASCII(w io.Writer) error {
 
 	return nil
 }
-func triangleASCII(t *Triangle) string {
+func triangleASCII(t Triangle) string {
 	return fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.Normal.Ni), shortFloat(t.Normal.Nj), shortFloat(t.Normal.Nk)) +
 		"  outer loop\n" +
 		fmt.Sprintf("   vertex %s %s %s\n", shortFloat(t.Vertices[0].X), shortFloat(t.Vertices[0].Y), shortFloat(t.Vertices[0].Z)) +

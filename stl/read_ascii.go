@@ -26,10 +26,10 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 	}, nil
 }
 
-func extractASCIITriangles(br *bufio.Reader) (ts []*Triangle, err error) {
+func extractASCIITriangles(br *bufio.Reader) (ts []Triangle, err error) {
 	scanner := bufio.NewScanner(br)
 	scanner.Split(splitTriangles)
-	triangles := make(chan *Triangle)
+	triangles := make(chan Triangle)
 	errs := make(chan error)
 	var wg sync.WaitGroup
 	for scanner.Scan() {
@@ -56,13 +56,13 @@ func extractASCIITriangles(br *bufio.Reader) (ts []*Triangle, err error) {
 	}
 }
 
-func extractTriangle(s string, triangles chan *Triangle, errs chan error, wg *sync.WaitGroup) {
+func extractTriangle(s string, triangles chan Triangle, errs chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if strings.Contains(s, "endsolid") { //edge case, end of file
 		return
 	}
-	var v [3]*Coordinate
-	var norm *UnitVector
+	var v [3]Coordinate
+	var norm UnitVector
 	sl := strings.Split(s, "  ")
 
 	// Get the normal for a triangle
@@ -79,51 +79,51 @@ func extractTriangle(s string, triangles chan *Triangle, errs chan error, wg *sy
 		}
 	}
 
-	triangles <- &Triangle{
+	triangles <- Triangle{
 		Normal:      norm,
 		Vertices:    v,
 		AttrByteCnt: 0,
 	}
 }
 
-func extractCoords(s string) (*Coordinate, error) {
+func extractCoords(s string) (Coordinate, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	f1, err := strconv.ParseFloat(sl[1], 32)
 	if err != nil {
-		return nil, err
+		return Coordinate{}, err
 	}
 	f2, err := strconv.ParseFloat(sl[2], 32)
 	if err != nil {
-		return nil, err
+		return Coordinate{}, err
 	}
 	f3, err := strconv.ParseFloat(sl[3], 32)
 	if err != nil {
-		return nil, err
+		return Coordinate{}, err
 	}
 
-	return &Coordinate{
+	return Coordinate{
 		X: float32(f1),
 		Y: float32(f2),
 		Z: float32(f3),
 	}, nil
 }
 
-func extractUnitVec(s string) (*UnitVector, error) {
+func extractUnitVec(s string) (UnitVector, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	i, err := strconv.ParseFloat(sl[2], 32)
 	if err != nil {
-		return nil, err
+		return UnitVector{}, err
 	}
 	j, err := strconv.ParseFloat(sl[3], 32)
 	if err != nil {
-		return nil, err
+		return UnitVector{}, err
 	}
 	k, err := strconv.ParseFloat(sl[4], 32)
 	if err != nil {
-		return nil, err
+		return UnitVector{}, err
 	}
 
-	return &UnitVector{
+	return UnitVector{
 		Ni: float32(i),
 		Nj: float32(j),
 		Nk: float32(k),

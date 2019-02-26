@@ -123,12 +123,12 @@ func fileHash(file *os.File) (string, error) {
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
-func hash(t *stl.Triangle) string {
+func hash(t stl.Triangle) string {
 	h := sha256.New()
-	h.Write([]byte(fmt.Sprintf("%v", *t.Normal)))
-	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices[0])))
-	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices[1])))
-	h.Write([]byte(fmt.Sprintf("%v", *t.Vertices[2])))
+	h.Write([]byte(fmt.Sprintf("%v", t.Normal)))
+	h.Write([]byte(fmt.Sprintf("%v", t.Vertices[0])))
+	h.Write([]byte(fmt.Sprintf("%v", t.Vertices[1])))
+	h.Write([]byte(fmt.Sprintf("%v", t.Vertices[2])))
 	h.Write([]byte(fmt.Sprintf("%v", t.AttrByteCnt)))
 	return string(h.Sum(nil))
 }
