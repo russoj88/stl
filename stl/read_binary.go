@@ -33,7 +33,7 @@ func fromBinary(br *bufio.Reader) (Solid, error) {
 func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]*Triangle, error) {
 	// Each triangle is 50 bytes.
 	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
-	triParsed := make(chan *[]*Triangle, concurrencyLevel)
+	triParsed := make(chan []Triangle, concurrencyLevel)
 
 	// Read in binary and send chunks to workers
 	binToParse, errChan := sendBinaryToWorkers(br, triCount)
@@ -72,9 +72,10 @@ func extractBinaryHeader(br *bufio.Reader) (string, error) {
 
 	return strings.TrimSpace(string(hBytes)), nil
 }
-func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan *[]byte, errChan chan error) {
+func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan []byte, errChan chan error) {
 	errChan = make(chan error, 1)
-	work = make(chan *[]byte, concurrencyLevel)
+	defer close(errChan)
+	work = make(chan []byte, concurrencyLevel)
 	const numTrianglesPerWorkUnit = 1000
 
 	go func() {
@@ -100,39 +101,41 @@ func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan *[]byte, 
 				}
 			}
 
-			work <- &bin
+			work <- bin
 		}
 	}()
 
 	return work, errChan
 }
-func accumulateTriangles(triCount uint32, in <-chan *[]*Triangle, errChan chan error) ([]*Triangle, error) {
-	defer close(errChan)
+func accumulateTriangles(triCount uint32, in <-chan []Triangle, errChan chan error) ([]*Triangle, error) {
+	// Read in all triangles
 	tris := make([]*Triangle, 0, triCount)
-	for {
-		select {
-		case p, more := <-in:
-			if !more {
-				return tris, nil
-			}
-			tris = append(tris, *p...)
-		case err := <-errChan:
-			return nil, err
+	for t := range in {
+		for _, tp := range t {
+			tris = append(tris, &tp)
 		}
 	}
+
+	// If there is an error on errChan, return it
+	err := <-errChan
+	if err != nil {
+		return nil, err
+	}
+
+	return tris, nil
 }
-func parseChunksOfBinary(in <-chan *[]byte, out chan<- *[]*Triangle, workGroup *sync.WaitGroup) {
+func parseChunksOfBinary(in <-chan []byte, out chan<- []Triangle, workGroup *sync.WaitGroup) {
 	defer workGroup.Done()
 	for w := range in {
-		t := make([]*Triangle, 0, len(*w)/50)
-		for i := 0; i < len(*w); i += 50 {
-			t = append(t, triangleFromBinary((*w)[i:i+50]))
+		t := make([]Triangle, 0, len(w)/50)
+		for i := 0; i < len(w); i += 50 {
+			t = append(t, triangleFromBinary(w[i:i+50]))
 		}
-		out <- &t
+		out <- t
 	}
 }
-func triangleFromBinary(bin []byte) *Triangle {
-	return &Triangle{
+func triangleFromBinary(bin []byte) Triangle {
+	return Triangle{
 		Normal: unitVectorFromBinary(bin[0:12]),
 		Vertices: [3]*Coordinate{
 			coordinateFromBinary(bin[12:24]),
