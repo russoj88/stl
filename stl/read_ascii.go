@@ -57,8 +57,6 @@ func extractASCIITriangles(br *bufio.Reader) (ts []Triangle, err error) {
 
 func extractTriangle(s string, triangles chan Triangle, errs chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	var v [3]Coordinate
-	var norm UnitVector
 	sl := strings.Split(s, "\n")
 
 	// Get the normal for a triangle
@@ -68,6 +66,7 @@ func extractTriangle(s string, triangles chan Triangle, errs chan error, wg *syn
 	}
 
 	// Get coordinates
+	var v [3]Coordinate
 	for i := 0; i < 3; i++ {
 		v[i], err = extractCoords(sl[i+2])
 		if err != nil {
