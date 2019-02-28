@@ -2,6 +2,7 @@ package stl
 
 import (
 	"bufio"
+	"bytes"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,60 +26,77 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 	}, nil
 }
 
-func extractASCIITriangles(br *bufio.Reader) (ts []Triangle, err error) {
+func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	scanner := bufio.NewScanner(br)
 	scanner.Split(splitTriangles)
-	triangles := make(chan Triangle)
-	errs := make(chan error)
-	var wg sync.WaitGroup
-	for scanner.Scan() {
+	doneTris := make(chan Triangle)
+	errChan := make(chan error)
+	wg := &sync.WaitGroup{}
+	out := extractTriangle(scanner)
+	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
-		go extractTriangle(scanner.Text(), triangles, errs, &wg)
+		go parseTriangle(out, doneTris, errChan, wg)
 	}
+
 	go func() {
 		wg.Wait()
-		close(triangles)
-		close(errs)
+		close(doneTris)
+		close(errChan)
 	}()
-	for {
-		select {
-		case t, ok := <-triangles:
-			if !ok {
-				return
-			}
-			ts = append(ts, t)
-		case err, _ = <-errs:
+	return appendTriangles(doneTris, errChan)
+}
+
+func parseTriangle(out <-chan string, doneTris chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for o := range out {
+		var v [3]Coordinate
+		sl := strings.Split(o, "\n")
+
+		// Get the normal for a triangle
+		norm, err := extractUnitVec(sl[0])
+		if err != nil {
+			errChan <- err
+		}
+
+		// Get coordinates
+		for i := 0; i < 3; i++ {
+			v[i], err = extractCoords(sl[i+2])
 			if err != nil {
-				return
+				errChan <- err
 			}
+		}
+
+		doneTris <- Triangle{
+			Normal:   norm,
+			Vertices: v,
 		}
 	}
 }
 
-func extractTriangle(s string, triangles chan Triangle, errs chan error, wg *sync.WaitGroup) {
-	defer wg.Done()
-	sl := strings.Split(s, "\n")
+func appendTriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error) {
+	// Read in all triangles
+	tris := make([]Triangle, 0)
+	for t := range in {
+		tris = append(tris, t)
+	}
 
-	// Get the normal for a triangle
-	norm, err := extractUnitVec(sl[0])
+	// If there is an error on errChan, return it
+	err := <-errChan
 	if err != nil {
-		errs <- err
+		return nil, err
 	}
+	return tris, nil
+}
 
-	// Get coordinates
-	var v [3]Coordinate
-	for i := 0; i < 3; i++ {
-		v[i], err = extractCoords(sl[i+2])
-		if err != nil {
-			errs <- err
+func extractTriangle(b *bufio.Scanner) (out chan string) {
+	out = make(chan string)
+	go func() {
+		defer close(out)
+		for b.Scan() {
+			out <- b.Text()
 		}
-	}
-
-	triangles <- Triangle{
-		Normal:      norm,
-		Vertices:    v,
-		AttrByteCnt: 0,
-	}
+	}()
+	return
 }
 
 func extractCoords(s string) (Coordinate, error) {
@@ -132,4 +150,24 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 	}
 
 	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
+}
+
+func splitTriangles(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	// End on input
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	// Find the data before the 7th newline
+	for n := 0; n < 7; n++ {
+		idx := bytes.IndexByte(data[advance+1:], '\n')
+		if idx < 0 {
+			// Request more data
+			return 0, nil, nil
+		}
+		advance += idx + 1
+	}
+
+	// Made it to the end of a token
+	return advance + 1, data[:advance], nil
 }
