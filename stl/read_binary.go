@@ -49,6 +49,7 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, erro
 	go func() {
 		workGroup.Wait()
 		close(triParsed)
+		close(errChan)
 	}()
 
 	// Accumulate parsed Triangles until triParsed channel is closed
@@ -74,7 +75,6 @@ func extractBinaryHeader(br *bufio.Reader) (string, error) {
 }
 func sendBinaryToWorkers(br *bufio.Reader, triCount uint32) (work chan []byte, errChan chan error) {
 	errChan = make(chan error, 1)
-	defer close(errChan)
 	work = make(chan []byte, concurrencyLevel)
 	const numTrianglesPerWorkUnit = 1000
 
