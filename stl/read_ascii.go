@@ -27,7 +27,7 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	scanner := bufio.NewScanner(br)
-	scanner.Split(splitTriangles)
+	scanner.Split(splitTrianglesASCII)
 	doneTris := make(chan Triangle)
 	errChan := make(chan error)
 	wg := &sync.WaitGroup{}
