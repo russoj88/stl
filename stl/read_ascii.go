@@ -24,16 +24,27 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 		Triangles:     tris,
 	}, nil
 }
+func extractASCIIHeader(br *bufio.Reader) (string, error) {
+	s, _, err := br.ReadLine()
+	if err != nil {
+		return "", err
+	}
 
+	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
+}
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	// Collect parsed triangles
 	doneTris := make(chan Triangle)
 	errChan := make(chan error)
+
+	// Read in ASCII data and send to workers
+	out := sendASCIIToWorkers(br)
+
+	// Start up workers
 	wg := &sync.WaitGroup{}
-	out := extractTriangle(br)
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
-		go parseTriangle(out, doneTris, errChan, wg)
+		go parseTriangles(out, doneTris, errChan, wg)
 	}
 
 	go func() {
@@ -41,10 +52,28 @@ func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 		close(doneTris)
 		close(errChan)
 	}()
-	return appendTriangles(doneTris, errChan)
+	return collectASCIITriangles(doneTris, errChan)
 }
+func sendASCIIToWorkers(br *bufio.Reader) chan string {
+	work := make(chan string)
 
-func parseTriangle(out <-chan string, doneTris chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
+	go func() {
+		defer close(work)
+
+		// Create Scanner with split func for ASCII triangles
+		scanner := bufio.NewScanner(br)
+		scanner.Split(splitTrianglesASCII)
+
+		// Need to copy each read from the Scanner because it will be overwritten by the next Scan
+		for scanner.Scan() {
+			bin := make([]byte, len(scanner.Text()))
+			copy(bin, scanner.Text())
+			work <- string(bin)
+		}
+	}()
+	return work
+}
+func parseTriangles(out <-chan string, doneTris chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for o := range out {
 		var v [3]Coordinate
@@ -70,10 +99,10 @@ func parseTriangle(out <-chan string, doneTris chan<- Triangle, errChan chan err
 		}
 	}
 }
-
-func appendTriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error) {
+func collectASCIITriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error) {
 	// Read in all triangles
-	tris := make([]Triangle, 0)
+	// Creating space for 1K triangles as even simple designs have a few hundred
+	tris := make([]Triangle, 0, 1024)
 	for t := range in {
 		tris = append(tris, t)
 	}
@@ -85,44 +114,27 @@ func appendTriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error)
 	}
 	return tris, nil
 }
-
-func extractTriangle(br *bufio.Reader) (out chan string) {
-	out = make(chan string)
-	go func() {
-		defer close(out)
-
-		// Scanner will return one Triangle at a time from br
-		scanner := bufio.NewScanner(br)
-		scanner.Split(splitTrianglesASCII)
-		for scanner.Scan() {
-			out <- scanner.Text()
-		}
-	}()
-	return
-}
-
 func extractCoords(s string) (Coordinate, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
-	f1, err := strconv.ParseFloat(sl[1], 32)
+	x, err := strconv.ParseFloat(sl[1], 32)
 	if err != nil {
 		return Coordinate{}, err
 	}
-	f2, err := strconv.ParseFloat(sl[2], 32)
+	y, err := strconv.ParseFloat(sl[2], 32)
 	if err != nil {
 		return Coordinate{}, err
 	}
-	f3, err := strconv.ParseFloat(sl[3], 32)
+	z, err := strconv.ParseFloat(sl[3], 32)
 	if err != nil {
 		return Coordinate{}, err
 	}
 
 	return Coordinate{
-		X: float32(f1),
-		Y: float32(f2),
-		Z: float32(f3),
+		X: float32(x),
+		Y: float32(y),
+		Z: float32(z),
 	}, nil
 }
-
 func extractUnitVec(s string) (UnitVector, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	i, err := strconv.ParseFloat(sl[2], 32)
@@ -143,13 +155,4 @@ func extractUnitVec(s string) (UnitVector, error) {
 		Nj: float32(j),
 		Nk: float32(k),
 	}, err
-}
-
-func extractASCIIHeader(br *bufio.Reader) (string, error) {
-	s, _, err := br.ReadLine()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
 }
