@@ -25,7 +25,7 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 	}, nil
 }
 func extractASCIIHeader(br *bufio.Reader) (string, error) {
-	s, _, err := br.ReadLine()
+	s, err := br.ReadString('\n')
 	if err != nil {
 		return "", err
 	}
