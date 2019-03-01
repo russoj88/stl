@@ -26,12 +26,11 @@ func fromASCII(br *bufio.Reader) (Solid, error) {
 }
 
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
-	scanner := bufio.NewScanner(br)
-	scanner.Split(splitTrianglesASCII)
+	// Collect parsed triangles
 	doneTris := make(chan Triangle)
 	errChan := make(chan error)
 	wg := &sync.WaitGroup{}
-	out := extractTriangle(scanner)
+	out := extractTriangle(br)
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
 		go parseTriangle(out, doneTris, errChan, wg)
@@ -87,12 +86,16 @@ func appendTriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error)
 	return tris, nil
 }
 
-func extractTriangle(b *bufio.Scanner) (out chan string) {
+func extractTriangle(br *bufio.Reader) (out chan string) {
 	out = make(chan string)
 	go func() {
 		defer close(out)
-		for b.Scan() {
-			out <- b.Text()
+
+		// Scanner will return one Triangle at a time from br
+		scanner := bufio.NewScanner(br)
+		scanner.Split(splitTrianglesASCII)
+		for scanner.Scan() {
+			out <- scanner.Text()
 		}
 	}()
 	return
