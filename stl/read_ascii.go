@@ -2,6 +2,8 @@ package stl
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,27 +36,27 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 }
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	// Collect parsed triangles
-	doneTris := make(chan Triangle)
-	errChan := make(chan error)
+	triParsed := make(chan Triangle)
+	errChan := make(chan error, concurrencyLevel+1)
 
 	// Read in ASCII data and send to workers
-	out := sendASCIIToWorkers(br)
+	raw := sendASCIIToWorkers(br, errChan)
 
 	// Start up workers
 	wg := &sync.WaitGroup{}
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
-		go parseTriangles(out, doneTris, errChan, wg)
+		go parseTriangles(raw, triParsed, errChan, wg)
 	}
 
 	go func() {
 		wg.Wait()
-		close(doneTris)
+		close(triParsed)
 		close(errChan)
 	}()
-	return collectASCIITriangles(doneTris, errChan)
+	return collectASCIITriangles(triParsed, errChan)
 }
-func sendASCIIToWorkers(br *bufio.Reader) chan string {
+func sendASCIIToWorkers(br *bufio.Reader, errChan chan error) chan string {
 	work := make(chan string)
 
 	go func() {
@@ -70,14 +72,25 @@ func sendASCIIToWorkers(br *bufio.Reader) chan string {
 			copy(bin, scanner.Text())
 			work <- string(bin)
 		}
+
+		if scanner.Err() != nil {
+			errChan <- scanner.Err()
+		}
 	}()
 	return work
 }
-func parseTriangles(out <-chan string, doneTris chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
+func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for o := range out {
+	// Catch panics
+	defer func() {
+		if r := recover(); r != nil {
+			errChan <- errors.New(fmt.Sprintf("unable to parse triangle from input"))
+		}
+	}()
+
+	for r := range raw {
 		var v [3]Coordinate
-		sl := strings.Split(o, "\n")
+		sl := strings.Split(r, "\n")
 
 		// Get the normal for a triangle
 		norm, err := extractUnitVec(sl[0])
@@ -93,17 +106,17 @@ func parseTriangles(out <-chan string, doneTris chan<- Triangle, errChan chan er
 			}
 		}
 
-		doneTris <- Triangle{
+		triParsed <- Triangle{
 			Normal:   norm,
 			Vertices: v,
 		}
 	}
 }
-func collectASCIITriangles(in <-chan Triangle, errChan chan error) ([]Triangle, error) {
+func collectASCIITriangles(triParsed <-chan Triangle, errChan chan error) ([]Triangle, error) {
 	// Read in all triangles
 	// Creating space for 1K triangles as even simple designs have a few hundred
 	tris := make([]Triangle, 0, 1024)
-	for t := range in {
+	for t := range triParsed {
 		tris = append(tris, t)
 	}
 
@@ -112,6 +125,7 @@ func collectASCIITriangles(in <-chan Triangle, errChan chan error) ([]Triangle, 
 	if err != nil {
 		return nil, err
 	}
+
 	return tris, nil
 }
 func extractCoords(s string) (Coordinate, error) {
