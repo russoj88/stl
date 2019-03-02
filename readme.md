@@ -27,7 +27,7 @@ if err != nil {
 }
 
 // Read into STL type
-solid, err := Read(gFile)
+solid, err := From(gFile)
 if err != nil {
     t.Errorf("could not read stl: %v", err)
 }
