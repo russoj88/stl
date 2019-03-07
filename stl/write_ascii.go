@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
+	"strings"
 )
 
 // ToASCII writes the Solid out in ASCII form
@@ -29,6 +31,17 @@ func (s *Solid) ToASCII(w io.Writer) error {
 	}
 
 	return nil
+}
+
+// Helper func to write ASCII directly to a file
+func (s *Solid) ToASCIIFile(filename string) error {
+	file, err := os.OpenFile(strings.TrimSpace(filename), os.O_WRONLY|os.O_CREATE, 0700)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return s.ToASCII(file)
 }
 func triangleASCII(t Triangle) string {
 	return fmt.Sprintf(" facet normal %s %s %s\n", shortFloat(t.Normal.Ni), shortFloat(t.Normal.Nj), shortFloat(t.Normal.Nk)) +
