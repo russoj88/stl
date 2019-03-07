@@ -3,7 +3,6 @@ package stl
 import (
 	"bufio"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -49,20 +48,19 @@ func extractBinaryTriangleCount(br *bufio.Reader) (uint32, error) {
 
 	return binary.LittleEndian.Uint32(cntBytes), nil
 }
-func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, error) {
-	// Each triangle is 50 bytes.
-	// Parsing is done concurrently here depending on concurrencyLevel in config.go.
-	triParsed := make(chan []Triangle, concurrencyLevel)
-	errChan := make(chan error, concurrencyLevel+1)
 
+// Each triangle is 50 bytes.
+// Parsing is done concurrently here depending on concurrencyLevel in config.go.
+func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, error) {
 	// Read in binary and send chunks to workers
-	raw := sendBinaryToWorkers(br, errChan)
+	raw, errChan := sendBinaryToWorkers(br)
 
 	// Start up workers
+	triParsed := make(chan []Triangle, concurrencyLevel)
 	workGroup := sync.WaitGroup{}
 	for i := 0; i < concurrencyLevel; i++ {
 		workGroup.Add(1)
-		go parseChunksOfBinary(raw, triParsed, errChan, &workGroup)
+		go parseChunksOfBinary(raw, triParsed, &workGroup)
 	}
 
 	// When workers are done, close triParsed
@@ -75,8 +73,10 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, erro
 	// Accumulate parsed Triangles until triParsed channel is closed
 	return collectBinaryTriangles(triCount, triParsed, errChan)
 }
-func sendBinaryToWorkers(br *bufio.Reader, errChan chan error) chan []byte {
+func sendBinaryToWorkers(br *bufio.Reader) (chan []byte, chan error) {
 	raw := make(chan []byte)
+	// errChan needs a space to put error and return
+	errChan := make(chan error, 1)
 
 	go func() {
 		defer close(raw)
@@ -93,20 +93,14 @@ func sendBinaryToWorkers(br *bufio.Reader, errChan chan error) chan []byte {
 		}
 
 		if scanner.Err() != nil {
-			errChan <- scanner.Err()
+			errChan <- fmt.Errorf("error reading input: %v", scanner.Err())
 		}
 	}()
 
-	return raw
+	return raw, errChan
 }
-func parseChunksOfBinary(raw <-chan []byte, triParsed chan<- []Triangle, errChan chan error, workGroup *sync.WaitGroup) {
+func parseChunksOfBinary(raw <-chan []byte, triParsed chan<- []Triangle, workGroup *sync.WaitGroup) {
 	defer workGroup.Done()
-	// Catch panics
-	defer func() {
-		if r := recover(); r != nil {
-			errChan <- errors.New(fmt.Sprintf("unable to parse triangle from input"))
-		}
-	}()
 
 	for r := range raw {
 		t := make([]Triangle, 0, len(r)/50)
