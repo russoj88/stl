@@ -2,7 +2,6 @@ package stl
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -37,10 +36,9 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	// Collect parsed triangles
 	triParsed := make(chan Triangle)
-	errChan := make(chan error, concurrencyLevel+1)
 
 	// Read in ASCII data and send to workers
-	raw := sendASCIIToWorkers(br, errChan)
+	raw, errChan := sendASCIIToWorkers(br)
 
 	// Start up workers
 	wg := &sync.WaitGroup{}
@@ -56,8 +54,10 @@ func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	}()
 	return collectASCIITriangles(triParsed, errChan)
 }
-func sendASCIIToWorkers(br *bufio.Reader, errChan chan error) chan string {
+func sendASCIIToWorkers(br *bufio.Reader) (chan string, chan error) {
 	work := make(chan string)
+	// errChan needs a space to put error and return
+	errChan := make(chan error, concurrencyLevel+1)
 
 	go func() {
 		defer close(work)
@@ -74,19 +74,13 @@ func sendASCIIToWorkers(br *bufio.Reader, errChan chan error) chan string {
 		}
 
 		if scanner.Err() != nil {
-			errChan <- scanner.Err()
+			errChan <- fmt.Errorf("error reading input: %v", scanner.Err())
 		}
 	}()
-	return work
+	return work, errChan
 }
 func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	// Catch panics
-	defer func() {
-		if r := recover(); r != nil {
-			errChan <- errors.New(fmt.Sprintf("unable to parse triangle from input"))
-		}
-	}()
 
 	for r := range raw {
 		var v [3]Coordinate
@@ -96,6 +90,7 @@ func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan e
 		norm, err := extractUnitVec(sl[0])
 		if err != nil {
 			errChan <- err
+			return
 		}
 
 		// Get coordinates
@@ -103,6 +98,7 @@ func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan e
 			v[i], err = extractCoords(sl[i+2])
 			if err != nil {
 				errChan <- err
+				return
 			}
 		}
 
@@ -111,6 +107,56 @@ func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan e
 			Vertices: v,
 		}
 	}
+}
+func extractCoords(s string) (Coordinate, error) {
+	sl := strings.Split(strings.TrimSpace(s), " ")
+	if len(sl) != 4 {
+		return Coordinate{}, fmt.Errorf("invalid input for coordinate: %s", strings.TrimSpace(s))
+	}
+
+	x, err := strconv.ParseFloat(sl[1], 32)
+	if err != nil {
+		return Coordinate{}, fmt.Errorf("invalid input for coordinate x: %v", err)
+	}
+	y, err := strconv.ParseFloat(sl[2], 32)
+	if err != nil {
+		return Coordinate{}, fmt.Errorf("invalid input for coordinate y: %v", err)
+	}
+	z, err := strconv.ParseFloat(sl[3], 32)
+	if err != nil {
+		return Coordinate{}, fmt.Errorf("invalid input for coordinate z: %v", err)
+	}
+
+	return Coordinate{
+		X: float32(x),
+		Y: float32(y),
+		Z: float32(z),
+	}, nil
+}
+func extractUnitVec(s string) (UnitVector, error) {
+	sl := strings.Split(strings.TrimSpace(s), " ")
+	if len(sl) != 5 {
+		return UnitVector{}, fmt.Errorf("invalid input for unit vector: %s", strings.TrimSpace(s))
+	}
+
+	i, err := strconv.ParseFloat(sl[2], 32)
+	if err != nil {
+		return UnitVector{}, fmt.Errorf("invalid input for unit vector i: %v", err)
+	}
+	j, err := strconv.ParseFloat(sl[3], 32)
+	if err != nil {
+		return UnitVector{}, fmt.Errorf("invalid input for unit vector j: %v", err)
+	}
+	k, err := strconv.ParseFloat(sl[4], 32)
+	if err != nil {
+		return UnitVector{}, fmt.Errorf("invalid input for unit vector k: %v", err)
+	}
+
+	return UnitVector{
+		Ni: float32(i),
+		Nj: float32(j),
+		Nk: float32(k),
+	}, nil
 }
 func collectASCIITriangles(triParsed <-chan Triangle, errChan chan error) ([]Triangle, error) {
 	// Read in all triangles
@@ -127,46 +173,4 @@ func collectASCIITriangles(triParsed <-chan Triangle, errChan chan error) ([]Tri
 	}
 
 	return tris, nil
-}
-func extractCoords(s string) (Coordinate, error) {
-	sl := strings.Split(strings.TrimSpace(s), " ")
-	x, err := strconv.ParseFloat(sl[1], 32)
-	if err != nil {
-		return Coordinate{}, err
-	}
-	y, err := strconv.ParseFloat(sl[2], 32)
-	if err != nil {
-		return Coordinate{}, err
-	}
-	z, err := strconv.ParseFloat(sl[3], 32)
-	if err != nil {
-		return Coordinate{}, err
-	}
-
-	return Coordinate{
-		X: float32(x),
-		Y: float32(y),
-		Z: float32(z),
-	}, nil
-}
-func extractUnitVec(s string) (UnitVector, error) {
-	sl := strings.Split(strings.TrimSpace(s), " ")
-	i, err := strconv.ParseFloat(sl[2], 32)
-	if err != nil {
-		return UnitVector{}, err
-	}
-	j, err := strconv.ParseFloat(sl[3], 32)
-	if err != nil {
-		return UnitVector{}, err
-	}
-	k, err := strconv.ParseFloat(sl[4], 32)
-	if err != nil {
-		return UnitVector{}, err
-	}
-
-	return UnitVector{
-		Ni: float32(i),
-		Nj: float32(j),
-		Nk: float32(k),
-	}, err
 }

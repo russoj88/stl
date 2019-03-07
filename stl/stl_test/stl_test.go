@@ -59,6 +59,16 @@ func TestFrom_Binary(t *testing.T) {
 		t.Errorf("Buffer and golden file are not equal!")
 	}
 }
+func TestFrom_BinaryError(t *testing.T) {
+	t.Parallel()
+	testFile := "testdata/invalid_binary.stl"
+
+	// Read into Solid type
+	_, err := stl.FromFile(testFile)
+	if err == nil {
+		t.Errorf("expecting error, got none")
+	}
+}
 func TestFrom_ASCII(t *testing.T) {
 	t.Parallel()
 	goldenFile := "testdata/Sphericon.stl"
@@ -85,6 +95,26 @@ func TestFrom_ASCII(t *testing.T) {
 	// Confirm the buffer matches golden file
 	if !contentsAreEqual(gFile, buffer) {
 		t.Errorf("Buffer and golden file are not equal!")
+	}
+}
+func TestFrom_ASCIIErrorTriangle(t *testing.T) {
+	t.Parallel()
+	testFile := "testdata/invalid_ASCII_triangle.stl"
+
+	// Read into Solid type
+	_, err := stl.FromFile(testFile)
+	if err == nil {
+		t.Errorf("expecting error, got none")
+	}
+}
+func TestFrom_ASCIIErrorLine(t *testing.T) {
+	t.Parallel()
+	testFile := "testdata/invalid_ASCII_line.stl"
+
+	// Read into Solid type
+	_, err := stl.FromFile(testFile)
+	if err == nil {
+		t.Errorf("expecting error, got none")
 	}
 }
 func writeToBuffer(solid stl.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
