@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
+	"strings"
 )
 
 // ToBinary writes the Solid out in binary form
@@ -29,6 +31,17 @@ func (s *Solid) ToBinary(w io.Writer) error {
 	}
 
 	return nil
+}
+
+// Helper func to write binary directly to a file
+func (s *Solid) ToBinaryFile(filename string) error {
+	file, err := os.OpenFile(strings.TrimSpace(filename), os.O_WRONLY|os.O_CREATE, 0700)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return s.ToBinary(file)
 }
 func headerBinary(s string) []byte {
 	// Trim header down to 80 bytes

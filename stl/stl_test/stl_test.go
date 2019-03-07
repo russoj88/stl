@@ -27,7 +27,76 @@ func TestFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not open golden file %s", goldenFile)
 	}
+	defer gFile.Close()
 	if !contentsAreEqual(gFile, buffer) {
+		t.Errorf("Buffer and golden file are not equal!")
+	}
+}
+func TestToASCIIFile(t *testing.T) {
+	t.Parallel()
+	goldenFile := "testdata/small_ASCII.stl"
+	dumpFile := "testdata/dump_ASCII.stl"
+
+	defer os.Remove(dumpFile)
+
+	// Read into Solid type
+	solid, err := stl.FromFile(goldenFile)
+	if err != nil {
+		t.Errorf("could not read stl: %v", err)
+	}
+
+	orderTriangles(&solid)
+
+	// Write solid to a buffer
+	err = solid.ToASCIIFile(dumpFile)
+	if err != nil {
+		t.Errorf("failed to write file: %v", err)
+	}
+
+	// Confirm the buffer matches golden file
+	gFile, err := os.Open(goldenFile)
+	if err != nil {
+		t.Fatalf("could not open golden file %s", goldenFile)
+	}
+	dFile, err := os.Open(dumpFile)
+	if err != nil {
+		t.Fatalf("could not open dump file %s", dumpFile)
+	}
+	if !contentsAreEqual(gFile, dFile) {
+		t.Errorf("Buffer and golden file are not equal!")
+	}
+}
+func TestToBinaryFile(t *testing.T) {
+	t.Parallel()
+	goldenFile := "testdata/small_binary.stl"
+	dumpFile := "testdata/dump_binary.stl"
+
+	defer os.Remove(dumpFile)
+
+	// Read into Solid type
+	solid, err := stl.FromFile(goldenFile)
+	if err != nil {
+		t.Errorf("could not read stl: %v", err)
+	}
+
+	orderTriangles(&solid)
+
+	// Write solid to a buffer
+	err = solid.ToBinaryFile(dumpFile)
+	if err != nil {
+		t.Errorf("failed to write file: %v", err)
+	}
+
+	// Confirm the buffer matches golden file
+	gFile, err := os.Open(goldenFile)
+	if err != nil {
+		t.Fatalf("could not open golden file %s", goldenFile)
+	}
+	dFile, err := os.Open(dumpFile)
+	if err != nil {
+		t.Fatalf("could not open dump file %s", dumpFile)
+	}
+	if !contentsAreEqual(gFile, dFile) {
 		t.Errorf("Buffer and golden file are not equal!")
 	}
 }
@@ -117,8 +186,7 @@ func TestFrom_ASCIIErrorLine(t *testing.T) {
 		t.Errorf("expecting error, got none")
 	}
 }
-func writeToBuffer(solid stl.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
-	// Order triangles to make hash comparison between files
+func orderTriangles(solid *stl.Solid) {
 	sort.Slice(solid.Triangles, func(i, j int) bool {
 		for idx := 0; idx < 3; idx++ {
 			l := solid.Triangles[i].Vertices[idx]
@@ -137,6 +205,9 @@ func writeToBuffer(solid stl.Solid, err error, To func(io.Writer) error, t *test
 
 		return solid.Triangles[i].Normal.Ni < solid.Triangles[j].Normal.Ni
 	})
+}
+func writeToBuffer(solid stl.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
+	orderTriangles(&solid)
 
 	// Write to a binary buffer
 	buffer := bytes.NewBuffer([]byte{})
