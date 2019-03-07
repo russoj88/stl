@@ -9,16 +9,38 @@ import (
 	"testing"
 )
 
-func Test_Binary(t *testing.T) {
+func TestFromFile(t *testing.T) {
+	t.Parallel()
+	goldenFile := "testdata/Utah_teapot.stl"
+
+	// Read into Solid type
+	solid, err := stl.FromFile(goldenFile)
+	if err != nil {
+		t.Errorf("could not read stl: %v", err)
+	}
+
+	// Write solid to a buffer
+	buffer := writeToBuffer(solid, err, solid.ToBinary, t)
+
+	// Confirm the buffer matches golden file
+	gFile, err := os.Open(goldenFile)
+	if err != nil {
+		t.Fatalf("could not open golden file %s", goldenFile)
+	}
+	if !contentsAreEqual(gFile, buffer) {
+		t.Errorf("Buffer and golden file are not equal!")
+	}
+}
+func TestFrom_Binary(t *testing.T) {
 	t.Parallel()
 	goldenFile := "testdata/Utah_teapot.stl"
 
 	// Open file
 	gFile, err := os.Open(goldenFile)
-	defer gFile.Close()
 	if err != nil {
 		t.Errorf("could not open file: %v", err)
 	}
+	defer gFile.Close()
 
 	// Read into Solid type
 	solid, err := stl.From(gFile)
@@ -37,16 +59,16 @@ func Test_Binary(t *testing.T) {
 		t.Errorf("Buffer and golden file are not equal!")
 	}
 }
-func Test_ASCII(t *testing.T) {
+func TestFrom_ASCII(t *testing.T) {
 	t.Parallel()
 	goldenFile := "testdata/Sphericon.stl"
 
 	// Open file
 	gFile, err := os.Open(goldenFile)
-	defer gFile.Close()
 	if err != nil {
 		t.Errorf("could not open file: %v", err)
 	}
+	defer gFile.Close()
 
 	// Read into Solid type
 	solid, err := stl.From(gFile)
