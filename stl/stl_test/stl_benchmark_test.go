@@ -8,7 +8,6 @@ import (
 )
 
 func BenchmarkFrom(b *testing.B) {
-	testFile := "testdata/Utah_teapot.stl"
 	for _, testLevel := range []int{
 		// Threads allowed for execution. This will then get used by concurrencyLevel to determine how many worker goroutines are made
 		// The number of cores (x2 for hyper-threading) seem to get the best performance
@@ -17,15 +16,12 @@ func BenchmarkFrom(b *testing.B) {
 		b.Run(fmt.Sprintf("cl=%02d", testLevel), func(b *testing.B) {
 			runtime.GOMAXPROCS(testLevel)
 			for i := 0; i < b.N; i++ {
-				runRead(testFile, b)
+				// Read into blank identifier as the actual output does not matter
+				_, err := stl.FromFile("testdata/Utah_teapot.stl")
+				if err != nil {
+					b.Errorf("could not read stl: %v", err)
+				}
 			}
 		})
-	}
-}
-func runRead(testFile string, b *testing.B) {
-	// Read into blank identifier as the actual output does not matter
-	_, err := stl.FromFile(testFile)
-	if err != nil {
-		b.Errorf("could not read stl: %v", err)
 	}
 }
