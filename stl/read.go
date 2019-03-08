@@ -32,6 +32,7 @@ func From(r io.Reader) (s Solid, err error) {
 	if string(indicator) == "solid " {
 		return fromASCII(br)
 	}
+
 	return fromBinary(br)
 }
 
@@ -45,6 +46,5 @@ func FromFile(filename string) (Solid, error) {
 	}
 	defer file.Close()
 
-	// Get Solid
 	return From(file)
 }
