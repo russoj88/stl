@@ -56,7 +56,7 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, erro
 	raw, errChan := sendBinaryToWorkers(br)
 
 	// Start up workers
-	triParsed := make(chan []Triangle, concurrencyLevel)
+	triParsed := make(chan []Triangle)
 	workGroup := sync.WaitGroup{}
 	for i := 0; i < concurrencyLevel; i++ {
 		workGroup.Add(1)
