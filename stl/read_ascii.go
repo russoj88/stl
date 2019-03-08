@@ -80,6 +80,7 @@ func sendASCIIToWorkers(br *bufio.Reader) (chan string, chan error) {
 			errChan <- fmt.Errorf("error reading input: %v", scanner.Err())
 		}
 	}()
+
 	return work, errChan
 }
 func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan error, wg *sync.WaitGroup) {
@@ -162,14 +163,12 @@ func extractUnitVec(s string) (UnitVector, error) {
 	}, nil
 }
 func collectASCIITriangles(triParsed <-chan Triangle, errChan chan error) ([]Triangle, error) {
-	// Read in all triangles
 	// Creating space for 1K triangles as even simple designs have a few hundred
 	tris := make([]Triangle, 0, 1024)
 	for t := range triParsed {
 		tris = append(tris, t)
 	}
 
-	// If there is an error on errChan, return it
 	err := <-errChan
 	if err != nil {
 		return nil, err

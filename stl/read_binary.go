@@ -111,7 +111,6 @@ func parseChunksOfBinary(raw <-chan []byte, triParsed chan<- []Triangle, workGro
 	}
 }
 func collectBinaryTriangles(triCount uint32, triParsed <-chan []Triangle, errChan <-chan error) ([]Triangle, error) {
-	// Read triParsed all triangles
 	tris := make([]Triangle, 0, triCount)
 	for t := range triParsed {
 		tris = append(tris, t...)
