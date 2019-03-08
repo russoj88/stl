@@ -7,7 +7,7 @@ import (
 )
 
 func splitTrianglesASCII(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	// End on input
+	// End of input
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -16,9 +16,11 @@ func splitTrianglesASCII(data []byte, atEOF bool) (advance int, token []byte, er
 	for n := 0; n < 7; n++ {
 		idx := bytes.IndexByte(data[advance+1:], '\n')
 		if idx < 0 {
+			// Invalid input
 			if atEOF && (len(data) < 8 || string(data[:8]) != "endsolid") {
 				return 0, nil, fmt.Errorf("invalid input data")
 			}
+
 			// Request more data
 			return 0, nil, nil
 		}
