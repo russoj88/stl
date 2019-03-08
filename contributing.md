@@ -1,1 +1,1 @@
-Please open an issue (and PR) on GitLab.
+Please fork the repo and open a PR on GitLab.
