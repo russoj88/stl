@@ -50,6 +50,7 @@ func headerBinary(s string) []byte {
 		s = s[:80]
 	}
 
+	// Pad header with zeroes
 	return append([]byte(s), bytes.Repeat([]byte{0}, 80-len(s))...)
 }
 func triCountBinary(u uint32) []byte {
