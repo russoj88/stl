@@ -31,7 +31,7 @@ func splitTrianglesASCII(data []byte, atEOF bool) (advance int, token []byte, er
 func splitTrianglesBinary(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	const chunkSize = 50000
 
-	// Return the next 50 bytes, or ask for more data
+	// Return the next chunk, or ask for more data
 	if len(data) >= chunkSize {
 		return chunkSize, data[:chunkSize], nil
 	}
