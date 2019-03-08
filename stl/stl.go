@@ -1,6 +1,12 @@
 package stl
 
-import "errors"
+import (
+	"errors"
+	"runtime"
+)
+
+// Number of worker goroutines
+var concurrencyLevel = runtime.NumCPU()
 
 var (
 	ErrEmptyInput = errors.New("input has no content")
