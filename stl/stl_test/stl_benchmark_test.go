@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func BenchmarkRead(b *testing.B) {
+func BenchmarkFrom(b *testing.B) {
 	testFile := "testdata/Utah_teapot.stl"
 	for _, testLevel := range []int{
 		// Threads allowed for execution. This will then get used by concurrencyLevel to determine how many worker goroutines are made
@@ -23,7 +23,7 @@ func BenchmarkRead(b *testing.B) {
 	}
 }
 func runRead(testFile string, b *testing.B) {
-	// Read into Solid type
+	// Read into blank identifier as the actual output does not matter
 	_, err := stl.FromFile(testFile)
 	if err != nil {
 		b.Errorf("could not read stl: %v", err)
