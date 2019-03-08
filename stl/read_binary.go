@@ -63,7 +63,7 @@ func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, erro
 		go parseChunksOfBinary(raw, triParsed, &workGroup)
 	}
 
-	// When workers are done, close triParsed
+	// When workers are done, close chans
 	go func() {
 		workGroup.Wait()
 		close(triParsed)

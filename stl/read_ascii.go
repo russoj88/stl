@@ -47,11 +47,14 @@ func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 		go parseTriangles(raw, triParsed, errChan, wg)
 	}
 
+	// When workers are done, close chans
 	go func() {
 		wg.Wait()
 		close(triParsed)
 		close(errChan)
 	}()
+
+	// Accumulate parsed Triangles until triParsed channel is closed
 	return collectASCIITriangles(triParsed, errChan)
 }
 func sendASCIIToWorkers(br *bufio.Reader) (chan string, chan error) {
