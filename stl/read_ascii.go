@@ -33,14 +33,14 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 
 	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
 }
-func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
-	// Collect parsed triangles
-	triParsed := make(chan Triangle)
 
-	// Read in ASCII data and send to workers
+// Parsing is done concurrently here depending on concurrencyLevel in config.go.
+func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
+	// Read in ASCII data.  Put on work chan raw.
 	raw, errChan := sendASCIIToWorkers(br)
 
 	// Start up workers
+	triParsed := make(chan Triangle)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
