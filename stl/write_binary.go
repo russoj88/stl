@@ -33,7 +33,8 @@ func (s *Solid) ToBinary(w io.Writer) error {
 	return nil
 }
 
-// Helper func to write binary directly to a file
+// ToBinaryFile writes the Solid to a file in binary format
+// See stl.ToBinary for more info
 func (s *Solid) ToBinaryFile(filename string) error {
 	file, err := os.OpenFile(strings.TrimSpace(filename), os.O_WRONLY|os.O_CREATE, 0700)
 	if err != nil {

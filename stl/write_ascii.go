@@ -33,7 +33,8 @@ func (s *Solid) ToASCII(w io.Writer) error {
 	return nil
 }
 
-// Helper func to write ASCII directly to a file
+// ToASCIIFile writes the Solid to a file in ASCII format
+// See stl.ToASCII for more info
 func (s *Solid) ToASCIIFile(filename string) error {
 	file, err := os.OpenFile(strings.TrimSpace(filename), os.O_WRONLY|os.O_CREATE, 0700)
 	if err != nil {
