@@ -59,24 +59,20 @@ func triCountBinary(u uint32) []byte {
 	return tcBytes
 }
 func triangleBinary(t Triangle) []byte {
-	bin := make([]byte, 0, 50)
+	bin := make([]byte, 50)
 
 	// Convert float32s to binary
-	for _, f := range [12]float32{
+	for i, f := range [12]float32{
 		t.Normal.Ni, t.Normal.Nj, t.Normal.Nk,
 		t.Vertices[0].X, t.Vertices[0].Y, t.Vertices[0].Z,
 		t.Vertices[1].X, t.Vertices[1].Y, t.Vertices[1].Z,
 		t.Vertices[2].X, t.Vertices[2].Y, t.Vertices[2].Z,
 	} {
-		b := make([]byte, 4)
-		binary.LittleEndian.PutUint32(b, math.Float32bits(f))
-		bin = append(bin, b...)
+		binary.LittleEndian.PutUint32(bin[i*4:(i+1)*4], math.Float32bits(f))
 	}
 
 	// Attribute byte count binary
-	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, t.AttrByteCnt)
-	bin = append(bin, b...)
+	binary.LittleEndian.PutUint16(bin[48:], t.AttrByteCnt)
 
 	return bin
 }
