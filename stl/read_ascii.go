@@ -34,7 +34,7 @@ func extractASCIIHeader(br *bufio.Reader) (string, error) {
 	return strings.TrimSpace(strings.TrimPrefix(string(s), "solid")), nil
 }
 
-// Parsing is done concurrently here depending on concurrencyLevel in config.go.
+// Parsing is done concurrently here depending on concurrencyLevel in stl.go.
 func extractASCIITriangles(br *bufio.Reader) (t []Triangle, err error) {
 	// Read in ASCII data.  Put on work chan raw.
 	raw, errChan := sendASCIIToWorkers(br)

@@ -50,7 +50,7 @@ func extractBinaryTriangleCount(br *bufio.Reader) (uint32, error) {
 }
 
 // Each triangle is 50 bytes.
-// Parsing is done concurrently here depending on concurrencyLevel in config.go.
+// Parsing is done concurrently here depending on concurrencyLevel in stl.go.
 func extractBinaryTriangles(triCount uint32, br *bufio.Reader) ([]Triangle, error) {
 	// Read in binary and send chunks to workers
 	raw, errChan := sendBinaryToWorkers(br)
