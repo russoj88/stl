@@ -1,1 +1,1 @@
-Please fork the repo and open a PR on GitLab.
+Please open a MR on [GitLab](https://gitlab.com/russoj88/stl/merge_requests).
