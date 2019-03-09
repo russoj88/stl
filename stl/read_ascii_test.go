@@ -2,7 +2,7 @@ package stl
 
 import "testing"
 
-func Test_extractUnitVec(t *testing.T) {
+func Test_extractUnitVector(t *testing.T) {
 	for _, tst := range []struct {
 		in       string
 		expected UnitVector
@@ -16,16 +16,16 @@ func Test_extractUnitVec(t *testing.T) {
 			},
 		},
 	} {
-		t.Run("extractUnitVec", func(t *testing.T) {
+		t.Run("extractUnitVector", func(t *testing.T) {
 			tst := tst
-			got, _ := extractUnitVec(tst.in)
+			got, _ := extractUnitVector(tst.in)
 			if got != tst.expected {
 				t.Errorf("Expecting %v, got %v", tst.expected, got)
 			}
 		})
 	}
 }
-func Test_extractUnitVecError(t *testing.T) {
+func Test_extractUnitVectorError(t *testing.T) {
 	for _, tst := range []struct {
 		in       string
 		expected string
@@ -47,16 +47,16 @@ func Test_extractUnitVecError(t *testing.T) {
 			expected: `invalid input for unit vector i: strconv.ParseFloat: parsing "a": invalid syntax`,
 		},
 	} {
-		t.Run("extractUnitVec", func(t *testing.T) {
+		t.Run("extractUnitVector", func(t *testing.T) {
 			tst := tst
-			_, got := extractUnitVec(tst.in)
+			_, got := extractUnitVector(tst.in)
 			if got == nil || got.Error() != tst.expected {
 				t.Errorf("Expecting %v, got %v", tst.expected, got)
 			}
 		})
 	}
 }
-func Test_extractCoords(t *testing.T) {
+func Test_extractCoordinate(t *testing.T) {
 	for _, tst := range []struct {
 		in       string
 		expected Coordinate
@@ -70,16 +70,16 @@ func Test_extractCoords(t *testing.T) {
 			},
 		},
 	} {
-		t.Run("extractUnitVec", func(t *testing.T) {
+		t.Run("extractCoordinate", func(t *testing.T) {
 			tst := tst
-			got, _ := extractCoords(tst.in)
+			got, _ := extractCoordinate(tst.in)
 			if got != tst.expected {
 				t.Errorf("Expecting %v, got %v", tst.expected, got)
 			}
 		})
 	}
 }
-func Test_extractCoordsError(t *testing.T) {
+func Test_extractCoordinateError(t *testing.T) {
 	for _, tst := range []struct {
 		in       string
 		expected string
@@ -101,9 +101,9 @@ func Test_extractCoordsError(t *testing.T) {
 			expected: `invalid input for coordinate x: strconv.ParseFloat: parsing "a": invalid syntax`,
 		},
 	} {
-		t.Run("extractUnitVec", func(t *testing.T) {
+		t.Run("extractCoordinate", func(t *testing.T) {
 			tst := tst
-			_, got := extractCoords(tst.in)
+			_, got := extractCoordinate(tst.in)
 			if got == nil || got.Error() != tst.expected {
 				t.Errorf("Expecting %v, got %v", tst.expected, got)
 			}

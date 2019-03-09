@@ -87,19 +87,19 @@ func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan e
 	defer wg.Done()
 
 	for r := range raw {
-		var v [3]Coordinate
 		sl := strings.Split(r, "\n")
 
 		// Get the normal for a triangle
-		norm, err := extractUnitVec(sl[0])
+		norm, err := extractUnitVector(sl[0])
 		if err != nil {
 			errChan <- err
 			return
 		}
 
 		// Get coordinates
+		var v [3]Coordinate
 		for i := 0; i < 3; i++ {
-			v[i], err = extractCoords(sl[i+2])
+			v[i], err = extractCoordinate(sl[i+2])
 			if err != nil {
 				errChan <- err
 				return
@@ -112,7 +112,7 @@ func parseTriangles(raw <-chan string, triParsed chan<- Triangle, errChan chan e
 		}
 	}
 }
-func extractCoords(s string) (Coordinate, error) {
+func extractCoordinate(s string) (Coordinate, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	if len(sl) != 4 {
 		return Coordinate{}, fmt.Errorf("invalid input for coordinate: %s", strings.TrimSpace(s))
@@ -137,7 +137,7 @@ func extractCoords(s string) (Coordinate, error) {
 		Z: float32(z),
 	}, nil
 }
-func extractUnitVec(s string) (UnitVector, error) {
+func extractUnitVector(s string) (UnitVector, error) {
 	sl := strings.Split(strings.TrimSpace(s), " ")
 	if len(sl) != 5 {
 		return UnitVector{}, fmt.Errorf("invalid input for unit vector: %s", strings.TrimSpace(s))
