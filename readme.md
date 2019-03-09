@@ -1,6 +1,6 @@
 # STL
 
-This is an [STL File](https://en.wikipedia.org/wiki/STL_(file_format) "Wiki") reader and writer written in Go.
+This is an [STL](https://en.wikipedia.org/wiki/STL_(file_format) "Wiki") reader and writer written in Go.
 
 ### Package use
 ##### From, To
