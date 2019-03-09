@@ -61,18 +61,28 @@ func triCountBinary(u uint32) []byte {
 func triangleBinary(t Triangle) []byte {
 	bin := make([]byte, 50)
 
-	// Convert float32s to binary
-	for i, f := range [12]float32{
-		t.Normal.Ni, t.Normal.Nj, t.Normal.Nk,
-		t.Vertices[0].X, t.Vertices[0].Y, t.Vertices[0].Z,
-		t.Vertices[1].X, t.Vertices[1].Y, t.Vertices[1].Z,
-		t.Vertices[2].X, t.Vertices[2].Y, t.Vertices[2].Z,
-	} {
-		binary.LittleEndian.PutUint32(bin[i*4:(i+1)*4], math.Float32bits(f))
-	}
+	// Normal
+	binary.LittleEndian.PutUint32(bin[0:4], math.Float32bits(t.Normal.Ni))
+	binary.LittleEndian.PutUint32(bin[4:8], math.Float32bits(t.Normal.Nj))
+	binary.LittleEndian.PutUint32(bin[8:12], math.Float32bits(t.Normal.Nk))
+
+	// Vertex 1
+	binary.LittleEndian.PutUint32(bin[12:16], math.Float32bits(t.Vertices[0].X))
+	binary.LittleEndian.PutUint32(bin[16:20], math.Float32bits(t.Vertices[0].Y))
+	binary.LittleEndian.PutUint32(bin[20:24], math.Float32bits(t.Vertices[0].Z))
+
+	// Vertex 2
+	binary.LittleEndian.PutUint32(bin[24:28], math.Float32bits(t.Vertices[1].X))
+	binary.LittleEndian.PutUint32(bin[28:32], math.Float32bits(t.Vertices[1].Y))
+	binary.LittleEndian.PutUint32(bin[32:40], math.Float32bits(t.Vertices[1].Z))
+
+	// Vertex 3
+	binary.LittleEndian.PutUint32(bin[36:40], math.Float32bits(t.Vertices[2].X))
+	binary.LittleEndian.PutUint32(bin[40:44], math.Float32bits(t.Vertices[2].Y))
+	binary.LittleEndian.PutUint32(bin[44:48], math.Float32bits(t.Vertices[2].Z))
 
 	// Attribute byte count binary
-	binary.LittleEndian.PutUint16(bin[48:], t.AttrByteCnt)
+	binary.LittleEndian.PutUint16(bin[48:50], t.AttrByteCnt)
 
 	return bin
 }
