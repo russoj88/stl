@@ -33,3 +33,7 @@ if err != nil {
     t.Errorf("could not write to file: %v", err)
 }
 ```
+
+### [Contributing](contributing.md)
+
+### [License](license)
