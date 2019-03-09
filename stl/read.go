@@ -11,14 +11,6 @@ import (
 // From creates a Solid from the input.
 // It handles both ASCII and binary formats.
 func From(r io.Reader) (s Solid, err error) {
-	// Catch panics
-	defer func() {
-		if r := recover(); r != nil {
-			s = Solid{}
-			err = fmt.Errorf("unable to parse input")
-		}
-	}()
-
 	// Use a buffered reader.  Default size is 4096 (4KB).
 	br := bufio.NewReader(r)
 
