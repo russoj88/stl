@@ -2,9 +2,10 @@ package stl_test
 
 import (
 	"fmt"
-	"gitlab.com/russoj88/stl/stl"
 	"runtime"
 	"testing"
+
+	stl2 "gitlab.com/russoj88/stl"
 )
 
 func BenchmarkFrom(b *testing.B) {
@@ -17,7 +18,7 @@ func BenchmarkFrom(b *testing.B) {
 			runtime.GOMAXPROCS(testLevel)
 			for i := 0; i < b.N; i++ {
 				// Read into blank identifier as the actual output does not matter
-				_, err := stl.FromFile("testdata/Utah_teapot.stl")
+				_, err := stl2.FromFile("testdata/Utah_teapot.stl")
 				if err != nil {
 					b.Errorf("could not read stl: %v", err)
 				}

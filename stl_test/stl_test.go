@@ -2,11 +2,12 @@ package stl
 
 import (
 	"bytes"
-	"gitlab.com/russoj88/stl/stl"
 	"io"
 	"os"
 	"sort"
 	"testing"
+
+	stl2 "gitlab.com/russoj88/stl"
 )
 
 func TestFromFile(t *testing.T) {
@@ -14,7 +15,7 @@ func TestFromFile(t *testing.T) {
 	goldenFile := "testdata/Utah_teapot.stl"
 
 	// Read into Solid type
-	solid, err := stl.FromFile(goldenFile)
+	solid, err := stl2.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -40,7 +41,7 @@ func TestToASCIIFile(t *testing.T) {
 	defer os.Remove(dumpFile)
 
 	// Read into Solid type
-	solid, err := stl.FromFile(goldenFile)
+	solid, err := stl2.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -74,7 +75,7 @@ func TestToBinaryFile(t *testing.T) {
 	defer os.Remove(dumpFile)
 
 	// Read into Solid type
-	solid, err := stl.FromFile(goldenFile)
+	solid, err := stl2.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -112,7 +113,7 @@ func TestFrom_Binary(t *testing.T) {
 	defer gFile.Close()
 
 	// Read into Solid type
-	solid, err := stl.From(gFile)
+	solid, err := stl2.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -133,7 +134,7 @@ func TestFrom_BinaryError(t *testing.T) {
 	testFile := "testdata/invalid_binary.stl"
 
 	// Read into Solid type
-	_, err := stl.FromFile(testFile)
+	_, err := stl2.FromFile(testFile)
 	if err == nil {
 		t.Errorf("expecting error, got none")
 	}
@@ -150,7 +151,7 @@ func TestFrom_ASCII(t *testing.T) {
 	defer gFile.Close()
 
 	// Read into Solid type
-	solid, err := stl.From(gFile)
+	solid, err := stl2.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -171,7 +172,7 @@ func TestFrom_ASCIIErrorTriangle(t *testing.T) {
 	testFile := "testdata/invalid_ASCII_triangle.stl"
 
 	// Read into Solid type
-	_, err := stl.FromFile(testFile)
+	_, err := stl2.FromFile(testFile)
 	if err == nil {
 		t.Errorf("expecting error, got none")
 	}
@@ -181,12 +182,12 @@ func TestFrom_ASCIIErrorLine(t *testing.T) {
 	testFile := "testdata/invalid_ASCII_line.stl"
 
 	// Read into Solid type
-	_, err := stl.FromFile(testFile)
+	_, err := stl2.FromFile(testFile)
 	if err == nil {
 		t.Errorf("expecting error, got none")
 	}
 }
-func orderTriangles(solid *stl.Solid) {
+func orderTriangles(solid *stl2.Solid) {
 	sort.Slice(solid.Triangles, func(i, j int) bool {
 		for idx := 0; idx < 3; idx++ {
 			l := solid.Triangles[i].Vertices[idx]
@@ -206,7 +207,7 @@ func orderTriangles(solid *stl.Solid) {
 		return solid.Triangles[i].Normal.Ni < solid.Triangles[j].Normal.Ni
 	})
 }
-func writeToBuffer(solid stl.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
+func writeToBuffer(solid stl2.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
 	orderTriangles(&solid)
 
 	// Write to a binary buffer
