@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	stl2 "gitlab.com/russoj88/stl"
+	"gitlab.com/russoj88/stl"
 )
 
 func TestFromFile(t *testing.T) {
@@ -15,13 +15,13 @@ func TestFromFile(t *testing.T) {
 	goldenFile := "testdata/Utah_teapot.stl"
 
 	// Read into Solid type
-	solid, err := stl2.FromFile(goldenFile)
+	solid, err := stl.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Write solid to a buffer
-	buffer := writeToBuffer(solid, err, solid.ToBinary, t)
+	buffer := writeToBuffer(solid, solid.ToBinary, t)
 
 	// Confirm the buffer matches golden file
 	gFile, err := os.Open(goldenFile)
@@ -30,7 +30,7 @@ func TestFromFile(t *testing.T) {
 	}
 	defer gFile.Close()
 	if !contentsAreEqual(gFile, buffer) {
-		t.Errorf("Buffer and golden file are not equal!")
+		t.Errorf("got buffer; want Utah_teapot.stl")
 	}
 }
 func TestToASCIIFile(t *testing.T) {
@@ -41,7 +41,7 @@ func TestToASCIIFile(t *testing.T) {
 	defer os.Remove(dumpFile)
 
 	// Read into Solid type
-	solid, err := stl2.FromFile(goldenFile)
+	solid, err := stl.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestToASCIIFile(t *testing.T) {
 		t.Fatalf("could not open dump file %s", dumpFile)
 	}
 	if !contentsAreEqual(gFile, dFile) {
-		t.Errorf("Buffer and golden file are not equal!")
+		t.Errorf("got dump_ASCII.stl; want small_ASCII.stl")
 	}
 }
 func TestToBinaryFile(t *testing.T) {
@@ -75,7 +75,7 @@ func TestToBinaryFile(t *testing.T) {
 	defer os.Remove(dumpFile)
 
 	// Read into Solid type
-	solid, err := stl2.FromFile(goldenFile)
+	solid, err := stl.FromFile(goldenFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestToBinaryFile(t *testing.T) {
 		t.Fatalf("could not open dump file %s", dumpFile)
 	}
 	if !contentsAreEqual(gFile, dFile) {
-		t.Errorf("Buffer and golden file are not equal!")
+		t.Errorf("got dump_binary.stl; want small_binary.stl")
 	}
 }
 func TestFrom_Binary(t *testing.T) {
@@ -113,20 +113,20 @@ func TestFrom_Binary(t *testing.T) {
 	defer gFile.Close()
 
 	// Read into Solid type
-	solid, err := stl2.From(gFile)
+	solid, err := stl.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Write solid to a buffer
-	buffer := writeToBuffer(solid, err, solid.ToBinary, t)
+	buffer := writeToBuffer(solid, solid.ToBinary, t)
 
 	// Set the golden file reader to 0 so the contents of the file are actually read in
 	_, _ = gFile.Seek(0, 0)
 
 	// Confirm the buffer matches golden file
 	if !contentsAreEqual(gFile, buffer) {
-		t.Errorf("Buffer and golden file are not equal!")
+		t.Errorf("got buffer; want Utah_teapot.stl")
 	}
 }
 func TestFrom_BinaryError(t *testing.T) {
@@ -134,9 +134,8 @@ func TestFrom_BinaryError(t *testing.T) {
 	testFile := "testdata/invalid_binary.stl"
 
 	// Read into Solid type
-	_, err := stl2.FromFile(testFile)
-	if err == nil {
-		t.Errorf("expecting error, got none")
+	if _, err := stl.FromFile(testFile); err == nil {
+		t.Errorf("got no error; want an error")
 	}
 }
 func TestFrom_ASCII(t *testing.T) {
@@ -151,20 +150,20 @@ func TestFrom_ASCII(t *testing.T) {
 	defer gFile.Close()
 
 	// Read into Solid type
-	solid, err := stl2.From(gFile)
+	solid, err := stl.From(gFile)
 	if err != nil {
 		t.Errorf("could not read stl: %v", err)
 	}
 
 	// Write solid to a buffer
-	buffer := writeToBuffer(solid, err, solid.ToASCII, t)
+	buffer := writeToBuffer(solid, solid.ToASCII, t)
 
 	// Set the golden file reader to 0 so the contents of the file are actually read in
 	_, _ = gFile.Seek(0, 0)
 
 	// Confirm the buffer matches golden file
 	if !contentsAreEqual(gFile, buffer) {
-		t.Errorf("Buffer and golden file are not equal!")
+		t.Errorf("got buffer; want Sphericon.stl")
 	}
 }
 func TestFrom_ASCIIErrorTriangle(t *testing.T) {
@@ -172,9 +171,8 @@ func TestFrom_ASCIIErrorTriangle(t *testing.T) {
 	testFile := "testdata/invalid_ASCII_triangle.stl"
 
 	// Read into Solid type
-	_, err := stl2.FromFile(testFile)
-	if err == nil {
-		t.Errorf("expecting error, got none")
+	if _, err := stl.FromFile(testFile); err == nil {
+		t.Errorf("got no error; want an error")
 	}
 }
 func TestFrom_ASCIIErrorLine(t *testing.T) {
@@ -182,12 +180,11 @@ func TestFrom_ASCIIErrorLine(t *testing.T) {
 	testFile := "testdata/invalid_ASCII_line.stl"
 
 	// Read into Solid type
-	_, err := stl2.FromFile(testFile)
-	if err == nil {
-		t.Errorf("expecting error, got none")
+	if _, err := stl.FromFile(testFile); err == nil {
+		t.Errorf("got no error; want an error")
 	}
 }
-func orderTriangles(solid *stl2.Solid) {
+func orderTriangles(solid *stl.Solid) {
 	sort.Slice(solid.Triangles, func(i, j int) bool {
 		for idx := 0; idx < 3; idx++ {
 			l := solid.Triangles[i].Vertices[idx]
@@ -207,13 +204,12 @@ func orderTriangles(solid *stl2.Solid) {
 		return solid.Triangles[i].Normal.Ni < solid.Triangles[j].Normal.Ni
 	})
 }
-func writeToBuffer(solid stl2.Solid, err error, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
+func writeToBuffer(solid stl.Solid, To func(io.Writer) error, t *testing.T) *bytes.Buffer {
 	orderTriangles(&solid)
 
 	// Write to a binary buffer
 	buffer := bytes.NewBuffer([]byte{})
-	err = To(buffer)
-	if err != nil {
+	if err := To(buffer); err != nil {
 		t.Errorf("could not write to binary buffer: %v", err)
 	}
 	return buffer

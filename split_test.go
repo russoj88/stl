@@ -9,9 +9,9 @@ import (
 
 func Test_splitTrianglesASCII(t *testing.T) {
 	for _, tst := range []struct {
-		in       []byte
-		eof      bool
-		expected struct {
+		in   []byte
+		eof  bool
+		want struct {
 			advance int
 			token   []byte
 			err     error
@@ -21,7 +21,7 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		{
 			in:  []byte{},
 			eof: true,
-			expected: struct {
+			want: struct {
 				advance int
 				token   []byte
 				err     error
@@ -35,7 +35,7 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		{
 			in:  []byte("facet normal 0.05082 -0.24321 -0.96864\n  outer loop\n   vertex -1000 0 0\n   vertex 0 -358 -934\n   vertex 0 -407 -914\n  endloop\n endfacet\n"),
 			eof: false,
-			expected: struct {
+			want: struct {
 				advance int
 				token   []byte
 				err     error
@@ -49,7 +49,7 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		{
 			in:  []byte("facet normal 0.05082 -0.24321 -0.96864\n"),
 			eof: false,
-			expected: struct {
+			want: struct {
 				advance int
 				token   []byte
 				err     error
@@ -63,7 +63,7 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		{
 			in:  []byte("facet normal 0.05082 -0.24321 -0.96864\n  outer loop\n   vertex -1000 0 0\n   vertex 0 -358 -934\n   vertex 0 -407 -914\n  endloop\n endfacet\nfacet normal 0.05082 -0.24321 -0.96864\n  outer loop\n   vertex -1000 0 0\n   vertex 0 -358 -934\n   vertex 0 -407 -914\n  endloop\n endfacet\n"),
 			eof: false,
-			expected: struct {
+			want: struct {
 				advance int
 				token   []byte
 				err     error
@@ -77,7 +77,7 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		{
 			in:  []byte("endsolid ASCII_STL_of_a_sphericon_by_CMG_Lee\n"),
 			eof: true,
-			expected: struct {
+			want: struct {
 				advance int
 				token   []byte
 				err     error
@@ -92,18 +92,18 @@ func Test_splitTrianglesASCII(t *testing.T) {
 		t.Run(fmt.Sprintf("splitTrianglesASCII - %q", tst.in), func(t *testing.T) {
 			t.Parallel()
 			gotAdvance, gotToken, gotError := splitTrianglesASCII(tst.in, tst.eof)
-			if gotAdvance != tst.expected.advance {
-				t.Errorf("Got %d. expecting %d", gotAdvance, tst.expected.advance)
+			if gotAdvance != tst.want.advance {
+				t.Errorf("got %d; want %d", gotAdvance, tst.want.advance)
 			}
-			if !bytes.Equal(gotToken, tst.expected.token) {
-				t.Errorf("Got \n%q\nexpecting\n%q", string(gotToken), string(tst.expected.token))
+			if !bytes.Equal(gotToken, tst.want.token) {
+				t.Errorf("got \n%q\nwant\n%q", string(gotToken), string(tst.want.token))
 			}
-			if gotError == nil && tst.expected.err != nil || gotError != nil && tst.expected.err == nil {
-				t.Errorf("Unexpected nil")
+			if gotError == nil && tst.want.err != nil || gotError != nil && tst.want.err == nil {
+				t.Errorf("unexpected nil")
 				t.FailNow()
 			}
-			if gotError != nil && tst.expected.err != nil && gotError.Error() != tst.expected.err.Error() {
-				t.Errorf("Got %s, expecting %s", gotError.Error(), tst.expected.err.Error())
+			if gotError != nil && tst.want.err != nil && gotError.Error() != tst.want.err.Error() {
+				t.Errorf("got %s; want %s", gotError.Error(), tst.want.err.Error())
 			}
 		})
 	}
@@ -127,7 +127,7 @@ func Test_splitTrianglesScannerASCII(t *testing.T) {
 	// Check that tokens are taken out in order
 	for i := 0; scanner.Scan(); i++ {
 		if scanner.Text() != tokens[i] {
-			t.Errorf("Got %q\n, expecting %q\n", scanner.Text(), tokens[i])
+			t.Errorf("got %q\n; want %q\n", scanner.Text(), tokens[i])
 		}
 	}
 }
